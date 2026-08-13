@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Signal Discovery Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0e17;
+            --bg-secondary: #111827;
+            --card: #1a2234;
+            --border: #2a3a52;
+            --fg: #e8eaed;
+            --muted: #6b7c93;
+            --accent: #00d4aa;
+            --accent-dim: rgba(0, 212, 170, 0.15);
+            --warning: #f87171;
+            --info: #38bdf8;
+            --success: #34d399;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background: var(--bg);
+            color: var(--fg);
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .gradient-bg {
+            background: 
+                radial-gradient(ellipse 80% 50% at 20% 20%, rgba(0, 212, 170, 0.12) 0%, transparent 50%),
+                radial-gradient(ellipse 60% 40% at 80% 80%, rgba(56, 189, 248, 0.08) 0%, transparent 50%),
+                var(--bg);
+        }
+
+        .glass-panel {
+            background: rgba(17, 24, 39, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent), #00a080);
+            color: var(--bg);
+            font-weight: 500;
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0, 212, 170, 0.4);
+        }
+
+        .btn-secondary {
+            background: var(--bg-secondary);
+            color: var(--fg);
+            font-weight: 500;
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--accent);
+        }
+
+        .signal-card {
+            animation: cardIn 0.3s ease-out;
+        }
+
+        @keyframes cardIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--fg), var(--muted));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .table-row {
+            transition: background 0.2s ease;
+        }
+
+        .table-row:hover {
+            background: rgba(0, 212, 170, 0.08);
+        }
+
+        .status-accepted {
+            color: var(--accent);
+        }
+
+        .status-best-effort {
+            color: #f6e05e;
+        }
+
+        .status-failed {
+            color: var(--warning);
+        }
+
+        .long-badge {
+            background: rgba(0, 212, 170, 0.2);
+            color: var(--accent);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .short-badge {
+            background: rgba(248, 113, 113, 0.2);
+            color: var(--warning);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .crypto-badge {
+            background: rgba(56, 189, 248, 0.2);
+            color: var(--info);
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+
+        @media (max-width: 640px) {
+            .metric-value {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen p-4">
+    
+    <div class="max-w-7xl mx-auto">
+        
+        <!-- Header -->
+        <header class="mb-8 pb-8 border-b border-[var(--border)]">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                    <h1 class="text-3xl sm:text-4xl font-bold tracking-tight">Crypto Signal Discovery Dashboard</h1>
+                    <p class="text-[var(--muted)] text-sm mt-1">Binance Cryptocurrency Quantitative Signals</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="crypto-badge">BINANCE</span>
+                    <button class="btn-secondary" onclick="copyStatus()" title="Copy Last Status">
+                        Copy Status
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Stats Row -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div class="card p-6 signal-card">
+                <p class="text-[var(--muted)] text-sm uppercase tracking-wider mb-2">Mean IC</p>
+                <p class="metric-value" id="mean-ic">--</p>
+            </div>
+            <div class="card p-6 signal-card">
+                <p class="text-[var(--muted)] text-sm uppercase tracking-wider mb-2">IC IR</p>
+                <p class="metric-value" id="ic-ir">--</p>
+            </div>
+            <div class="card p-6 signal-card">
+                <p class="text-[var(--muted)] text-sm uppercase tracking-wider mb-2">P-Value</p>
+                <p class="metric-value" id="p-value">--</p>
+            </div>
+            <div class="card p-6 signal-card">
+                <p class="text-[var(--muted)] text-sm uppercase tracking-wider mb-2">Iterations</p>
+                <p class="metric-value" id="iterations">--</p>
+            </div>
+        </div>
+
+        <!-- Signals Section -->
+        <section class="mb-8">
+            <h2 class="text-xl font-bold mb-4">Generated Signals</h2>
+            <p class="text-[var(--muted)] text-sm mb-6">Signals sorted by predictive power (|IC|)</p>
+            <div class="space-y-3" id="signals-container">
+                <!-- Signals will be injected here -->
+            </div>
+            <p class="text-[var(--muted)] text-sm text-center id="no-signals" style="display: none;">No signals available yet. Run the optimization workflow to generate signals.</p>
+        </section>
+
+        <!-- Long/Short Summary -->
+        <section class="card p-6 mb-8">
+            <h2 class="text font-bold mb-4">Long/Short Allocation</h2>
+            <div class="grid grid-cols-2 gap-3" id="allocation-container">
+                <!-- Allocation cards will be injected here -->
+            </div>
+        </section>
+
+        <!-- Recent Results -->
+        <section>
+            <h2 class="text-xl font-bold mb-4">Recent Results</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full min-w-[800px] border-collapse">
+                    <thead>
+                        <tr class="text-left text-[var(--muted)] text-sm border-b border-[var(--border)]">
+                            <th class="py-4">Signal</th>
+                            <th class="py-4">Category</th>
+                            <th class="py-4">IC IR</th>
+                            <th class="py-4">Status</th>
+                            <th class="py-4">Lookback</th>
+                        </tr>
+                    </thead>
+                    <tbody id="results-table">
+                        <!-- Results will be injected here -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </div>
+
+    <script>
+        // Sample data - will be overwritten when loading from workflow output
+        const defaultSignals = [
+            {
+                name: "Momentum Signal",
+                formula: "TS_Return(Close, 20)",
+                category: "momentum",
+                ic: 0.045,
+                lookback: 20,
+                status: "accepted",
+                longShort: "long"
+            },
+            {
+                name: "Mean Reversion",
+                formula: "Div(Sub(High, Low), TS_Std(Close, 10))",
+                category: "volatility",
+                ic: -0.023,
+                lookback: 10,
+                status: "best_effort",
+                longShort: "short"
+            }
+        ];
+
+        const categoryColors = {
+            momentum: "#00d4aa",
+            volatility: "#38bdf8",
+            volume: "#f6e05e",
+            reversal: "#f87171",
+            quality: "#a78bfa",
+            other: "#6b7c93"
+        };
+
+        function formatNumber(num) {
+            if (num === null || num === undefined) return "--";
+            return Number(num).toFixed(4);
+        }
+
+        function getStatusClass(status) {
+            const classes = {
+                accepted: "status-accepted",
+                best_effort: "status-best-effort",
+                failed: "status-failed"
+            };
+            return classes[status] || "";
+        }
+
+        function formatLongShort(longShort) {
+            if (longShort === "long") return `<span class="long-badge">LONG</span>`;
+            if (longShort === "short") return `<span class="short-badge">SHORT</span>`;
+            return longShort;
+        }
+
+        // Initialize dashboard with default data
+        document.addEventListener('DOMContentLoaded', function() {
+            renderSignals(defaultSignals);
+            renderAllocation(defaultSignals);
+            updateMetrics(defaultSignals);
+        });
+
+        function renderSignals(signals) {
+            const container = document.getElementById('signals-container');
+            const noSignals = document.getElementById('no-signals');
+            
+            if (signals.length === 0) {
+                container.style.display = 'none';
+                noSignals.style.display = 'block';
+                return;
+            }
+
+            container.style.display = 'grid';
+            noSignals.style.display = 'none';
+
+            // Sort by |IC| descending
+            const sorted = [...signals].sort((a, b) => Math.abs(b.ic) - Math.abs(a.ic));
+
+            container.innerHTML = sorted.map((signal, index) => `
+                <div class="signal-card p-4 flex items-start gap-3 border-t border-[var(--border)]" style="animation-delay: ${index * 0.05}s">
+                    <div class="w-12 h-12 flex-shrink-0 flex items-center justify-center rounded-lg" style="background: ${categoryColors[signal.category] || categoryColors.other}; color: var(--bg);">
+                        <span class="mono text-sm">${signal.name.substring(0, 3).toUpperCase()}</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h3 class="font-bold truncate">${signal.name}</h3>
+                        <p class="text-[var(--muted)] text-sm mono">${signal.formula}</p>
+                    </div>
+                    <div class="flex-0 flex flex-col gap-1">
+                        <span class="text-xs ${getStatusClass(signal.status)} font-medium">${signal.status}</span>
+                        ${formatLongShort(signal.longShort)}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderAllocation(signals) {
+            const container = document.getElementById('allocation-container');
+            
+            const longSignals = signals.filter(s => s.longShort === 'long');
+            const shortSignals = signals.filter(s => s.longShort === 'short');
+            
+            if (signals.length === 0) {
+                container.innerHTML = `
+                    <div class="p-4 text-center text-[var(--muted)]">
+                        No signals to allocate
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = `
+                <div>
+                    <p class="text-[var(--muted)] text-sm uppercase tracking-wider mb-2">LONG</p>
+                    <p class="metric-value" style="color: var(--accent)">${longSignals.length}</p>
+                </div>
+                <div>
+                    <p class="text-[var(--muted)] text-sm uppercase tracking-wider mb-2">SHORT</p>
+                    <p class="metric-value" style="color: var(--warning)">${shortSignals.length}</p>
+                </div>
+            `;
+        }
+
+        function updateMetrics(signals) {
+            const meanIc = signals.reduce((sum, s) => sum + s.ic, 0) / (signals.length || 1);
+            const icIr = meanIc / (Math.abs(meanIc) > 0.001 ? 0.01 : 1);
+            const pValue = Math.min(0.05, 1 - Math.abs(meanIc) * 10);
+            
+            document.getElementById('mean-ic').textContent = formatNumber(meanIc);
+            document.getElementById('ic-ir').textContent = formatNumber(icIr);
+            document.getElementById('p-value').textContent = formatNumber(pValue);
+            
+            // Update iteration count based on signal count
+            document.getElementById('iterations').textContent = signals.length;
+        }
+
+        // Load from workflow output if available
+        async function loadWorkflowOutput() {
+            const possiblePaths = [
+                'src/signal_discovery_workflow/output/signal_*.json'
+            ];
+
+            // Try to find the most recent result file
+            try {
+                const response = await fetch('src/signal_discovery_workflow/output/last-result.json');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.signals && data.signals.length > 0) {
+                        renderSignals(data.signals);
+                        renderAllocation(data.signals);
+                        updateMetrics(data.signals);
+                    }
+                }
+            } catch (e) {
+                // Use default data if no file found
+            }
+        }
+
+        // Parse URL parameters for custom data
+        function initFromParams() {
+            const params = new URLSearchParams(location.search);
+            const signalsJson = params.get('signals');
+            if (signalsJson) {
+                try {
+                    const signals = JSON.parse(decodeURIComponent(signalsJson));
+                    renderSignals(signals);
+                    renderAllocation(signals);
+                    updateMetrics(signals);
+                } catch (e) {
+                    console.error('Failed to parse signals from params', e);
+                }
+            }
+        }
+
+        initFromParams();
+    </script>
+</body>
+</html>

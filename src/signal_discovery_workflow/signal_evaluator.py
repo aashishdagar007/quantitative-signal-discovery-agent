@@ -17,7 +17,7 @@
 Signal Evaluator: Rank IC computation, signal-code execution, and helpers.
 
 The rank IC measures the Spearman correlation between signal values and forward
-stock returns — a standard quant-research signal-quality metric.
+asset returns — a standard quant-research signal-quality metric.
 """
 
 import inspect
@@ -35,7 +35,7 @@ from scipy import stats
 
 logger = logging.getLogger(__name__)
 
-DATA_DIR = Path(__file__).parent / "data" / "sp500"
+DATA_DIR = Path(__file__).parent / "data" / "binance"
 CALCULATOR_PATH = Path(__file__).parent / "template" / "calculator.json"
 
 
@@ -90,7 +90,7 @@ def get_operator_arities() -> dict[str, tuple[int, int]]:
 
 
 def load_stock_data() -> dict[str, pd.DataFrame]:
-    """Load all available stock price-volume data from CSV files."""
+    """Load all available crypto price-volume data from CSV files."""
     data = {}
     data_files = ["Open", "Close", "High", "Low", "Volume"]
 

@@ -248,26 +248,26 @@ async def signal_optimizer_function(config: SignalOptimizerConfig, builder: Buil
     logger.info(f"LLMs: signal={signal_llm_name}, code={code_llm_name}, advisor={advisor_llm_name}")
 
     operators = load_calculator_operators()
-    stock_data = load_stock_data()
+    crypto_data = load_stock_data()
 
     # ---- per-step helpers (close over the LLMs and shared state) ----
 
     def evaluate_ic(signal_code: str) -> dict[str, Any]:
         """Run the signal code and compute its rank IC against forward returns."""
-        if not stock_data:
-            return {"error": "No stock data", "mean_ic": None}
+        if not crypto_data:
+            return {"error": "No crypto data", "mean_ic": None}
 
         clean_code = extract_code_from_response(signal_code)
         exec_result = execute_signal_code(
             clean_code,
-            stock_data,
+            crypto_data,
             selection_periods=config.forward_periods,
         )
         if exec_result is None:
             return {"error": "Code execution failed", "mean_ic": None}
         signal_values, selected_signal = exec_result
 
-        close = stock_data.get("Close")
+        close = crypto_data.get("Close")
         if close is None:
             return {"error": "No Close data", "mean_ic": None}
 

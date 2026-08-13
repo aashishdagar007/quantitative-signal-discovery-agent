@@ -104,8 +104,8 @@ def evaluate_signal(
     Evaluate a signal's predictive power using Rank IC.
 
     Args:
-        signal_values: Signal values as a DataFrame (dates x stocks)
-        forward_returns: Forward returns as a DataFrame (dates x stocks)
+        signal_values: Signal values as a DataFrame (dates x assets)
+        forward_returns: Forward returns as a DataFrame (dates x assets)
         ic_threshold: Minimum absolute IC value for acceptance
 
     Returns:

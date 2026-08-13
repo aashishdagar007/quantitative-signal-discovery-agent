@@ -4,7 +4,7 @@ An end-to-end signal discovery workflow for quantitative finance using NVIDIA Ne
 
 ## Overview
 
-Signal discovery is the process of finding quantitative signals — also known as alpha signals — that have predictive power for future stock returns. This workflow automates the traditional labor-intensive process using LLMs.
+Signal discovery is the process of finding quantitative signals — also known as alpha signals — that have predictive power for future crypto returns. This workflow automates the traditional labor-intensive process using LLMs.
 
 ### Workflow Architecture
 
@@ -43,7 +43,7 @@ uv sync --locked
 
 ### Download Data
 
-The workflow requires S&P 500 price-volume data (Open, Close, High, Low, Volume). Use the included script to download fresh data via [yfinance](https://github.com/ranaroussi/yfinance):
+The workflow requires price-volume data (Open, Close, High, Low, Volume) stored as CSV files. Use the included script to download fresh data via the Binance API:
 
 ```bash
 uv run python -m signal_discovery_workflow.download_data
@@ -52,7 +52,7 @@ uv run python -m signal_discovery_workflow.download_data
 You can customize the date range:
 
 ```bash
-uv run python -m signal_discovery_workflow.download_data --start 2015-01-01 --end 2025-12-31
+uv run python -m signal_discovery_workflow.download_data --start 2023-01-01 --end 2025-12-31
 ```
 
 > **Disclaimer:** Each user is responsible for checking the content of datasets and the applicable licenses and determining if suitable for the intended use.
@@ -134,7 +134,7 @@ uv run nat run --config_file configs/config-optimization.yml --input "volume pri
 | **Signal Agent** | Uses an LLM to generate signal expressions based on price-volume data and operators |
 | **Code Agent** | Wraps each signal formula in a Python function via an LLM, and inlines the required operator implementations from `calculator.json` to produce a self-contained executable module |
 | **Eval Agent** | Performs backtesting via Rank IC and generates optimization suggestions |
-| **Data Download Script** | Fetches S&P 500 price-volume data from Yahoo Finance via `yfinance` |
+| **Data Download Script** | Fetches Binance crypto price-volume data |
 
 ## Configuration
 
@@ -287,8 +287,8 @@ quantitative-signal-discovery-agent/
 │   ├── signal_evaluator.py                         # Eval agent: runs signal code, computes Rank IC
 │   ├── signal_discovery_optimization_workflow.py   # Orchestrator (closed-loop generate/code/eval/feedback)
 │   ├── llm_utils.py                                # Shared LLM-output helpers (parse, sanitize, normalize)
-│   ├── download_data.py                            # Fetches S&P 500 data via yfinance
-│   ├── data/sp500/                                 # OHLCV CSVs (gitignored)
+│   ├── download_data.py                            # Fetches Binance crypto data |
+│   ├── data/binance/                                 # OHLCV CSVs (gitignored)
 │   ├── output/                                     # Saved signal results (gitignored)
 │   └── template/
 │       ├── calculator.json                         # Operator catalogue (name, signature, code)

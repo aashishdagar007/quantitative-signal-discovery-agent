@@ -1,0 +1,63 @@
+{
+  "timestamp": "20260815_183245",
+  "processing_method": "svd_band_extraction",
+  "input_metadata": {},
+  "output_summary": {
+    "shape": [
+      100,
+      100,
+      31
+    ],
+    "n_bands": 31,
+    "spatial_dims": [
+      100,
+      100
+    ]
+  },
+  "wavelength_calibration": {
+    "lambda_min_nm": 400,
+    "lambda_max_nm": 2500,
+    "wavelengths_nm": [
+      400.0,
+      470.0,
+      540.0,
+      610.0,
+      680.0,
+      750.0,
+      820.0,
+      890.0,
+      960.0,
+      1030.0,
+      1100.0,
+      1170.0,
+      1240.0,
+      1310.0,
+      1380.0,
+      1450.0,
+      1520.0,
+      1590.0,
+      1660.0,
+      1730.0,
+      1800.0,
+      1870.0,
+      1940.0,
+      2010.0,
+      2080.0,
+      2150.0,
+      2220.0,
+      2290.0,
+      2360.0,
+      2430.0,
+      2500.0
+    ]
+  },
+  "metadata": {
+    "input_path": "test_synthetic.jpg",
+    "input_type": "image",
+    "timestamp": "2026-08-15T18:32:45.745351",
+    "frame_height": 100,
+    "frame_width": 100,
+    "channels": 3,
+    "file_size": 13564
+  }
+}

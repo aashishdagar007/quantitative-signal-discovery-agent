@@ -3,724 +3,1255 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Trading System - Deep Space Dashboard</title>
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Google Fonts - Space Grotesk for tech aesthetic -->
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-    
-    <!-- Lucide icons -->
-    <script src="https://lucide.dev/assets/icons/ lucide.min.js"></script>
-    
+    <title>NEXUS — AI Trading System | Deep Space Command</title>
+    <meta name="description" content="Production-grade multi-asset AI Trading System. Crypto + Forex with LangGraph agents, Kronos forecasting, HRP/CVaR portfolio allocation, and blockchain audit trail.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
     <style>
+        /* ════════════════════════════════════════════════════════════════════
+           Design System — Deep Space Theme
+        ════════════════════════════════════════════════════════════════════ */
         :root {
-            --bg-primary: #050511;
-            --bg-secondary: #0a0a1a;
-            --bg-tertiary: #111122;
-            --fg-primary: #e0e0e8;
-            --fg-secondary: #7a7a8e;
-            --accent-cyan: #00d4aa;
-            --accent-orange: #ff6b35;
-            --accent-purple: #a855f7;
-            --card-bg: #1a1a30;
-            --border: #2a2a44;
-            --danger: #ff4757;
-            --success: #00d4aa;
+            --space-void:      #02020f;
+            --space-deep:      #050518;
+            --space-mid:       #0a0a28;
+            --space-panel:     #0e0e2e;
+            --space-card:      #12123a;
+            --space-border:    #1e1e52;
+            --space-glow:      #2828a0;
+            --fg-bright:       #e8e8ff;
+            --fg-dim:          #8888b8;
+            --fg-muted:        #444488;
+            --cyan:            #00f5d4;
+            --cyan-dim:        #00b89e;
+            --cyan-glow:       rgba(0, 245, 212, 0.12);
+            --violet:          #a855f7;
+            --violet-glow:     rgba(168, 85, 247, 0.12);
+            --orange:          #ff6b2b;
+            --orange-glow:     rgba(255, 107, 43, 0.12);
+            --green:           #22c55e;
+            --red:             #ef4444;
+            --yellow:          #f59e0b;
+            --gold:            #fbbf24;
         }
-        
-        * {
-            box-sizing: border-box;
-        }
-        
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html { height: 100%; }
+
         body {
             font-family: 'Space Grotesk', sans-serif;
-            background: var(--bg-primary);
-            color: var(--fg-primary);
+            background: var(--space-void);
+            color: var(--fg-bright);
             min-height: 100vh;
             overflow-x: hidden;
+            position: relative;
         }
-        
-        .font-mono {
-            font-family: 'JetBrains Mono', monospace;
+
+        /* ─── Scrollbar ──────────────────────────────────────────────────── */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--space-deep); }
+        ::-webkit-scrollbar-thumb { background: var(--space-glow); border-radius: 3px; }
+
+        /* ─── Starfield canvas (full-screen fixed background) ────────────── */
+        #starfield {
+            position: fixed; inset: 0;
+            width: 100%; height: 100%;
+            z-index: 0; pointer-events: none;
         }
-        
-        /* Custom scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
+
+        /* ─── Nebula gradient overlay ────────────────────────────────────── */
+        #nebula {
+            position: fixed; inset: 0; z-index: 1; pointer-events: none;
+            background:
+                radial-gradient(ellipse 60% 40% at 15% 25%, rgba(0,245,212,0.04) 0%, transparent 70%),
+                radial-gradient(ellipse 50% 60% at 85% 70%, rgba(168,85,247,0.05) 0%, transparent 70%),
+                radial-gradient(ellipse 40% 50% at 50% 90%, rgba(255,107,43,0.03) 0%, transparent 70%);
         }
-        ::-webkit-scrollbar-track {
-            background: var(--bg-secondary);
+
+        /* ─── Main layout ─────────────────────────────────────────────────── */
+        #app {
+            position: relative; z-index: 10;
+            padding: 0.75rem;
+            display: grid;
+            grid-template-rows: auto 1fr;
+            min-height: 100vh;
+            gap: 0.75rem;
         }
-        ::-webkit-scrollbar-thumb {
-            background: var(--border);
-            border-radius: 4px;
+
+        /* ─── Header ──────────────────────────────────────────────────────── */
+        #header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0.75rem 1.25rem;
+            background: rgba(14,14,46,0.7);
+            border: 1px solid var(--space-border);
+            border-radius: 12px;
+            backdrop-filter: blur(20px);
         }
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--accent-cyan);
+
+        .logo { display: flex; align-items: center; gap: 0.75rem; }
+        .logo-icon {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, var(--cyan), var(--violet));
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem; font-weight: 700; color: var(--space-void);
+            box-shadow: 0 0 20px rgba(0,245,212,0.4);
         }
-        
-        /* Starfield canvas container */
-        #starfield-canvas {
-            display: block;
-            width: 100%;
-            height: 100%;
+        .logo-text { line-height: 1; }
+        .logo-name { font-size: 1.2rem; font-weight: 700; letter-spacing: 0.1em;
+                     background: linear-gradient(90deg, var(--cyan), var(--violet));
+                     -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .logo-sub  { font-size: 0.65rem; color: var(--fg-dim); letter-spacing: 0.15em; text-transform: uppercase; }
+
+        .header-status { display: flex; align-items: center; gap: 1rem; }
+
+        .status-dot {
+            display: flex; align-items: center; gap: 0.4rem;
+            font-size: 0.72rem; font-family: 'JetBrains Mono', monospace;
+            color: var(--fg-dim); text-transform: uppercase; letter-spacing: 0.05em;
         }
-        
-        /* Background pattern */
-        .bg-pattern {
-            position: fixed;
-            inset: 0;
-            background-image: 
-                radial-gradient(ellipse at 20% 20%, rgba(0, 212, 170, 0.03) 0%, transparent 50%),
-                radial-gradient(ellipse at 80% 80%, rgba(168, 85, 247, 0.03) 0%, transparent 50%),
-                radial-gradient(ellipse at 40% 60%, rgba(255, 107, 53, 0.02) 0%, transparent 50%);
-            pointer-events: none;
+        .dot { width: 7px; height: 7px; border-radius: 50%; }
+        .dot-live  { background: var(--green); box-shadow: 0 0 8px var(--green); animation: pulse 1.5s infinite; }
+        .dot-warn  { background: var(--yellow); }
+        .dot-error { background: var(--red); }
+
+        @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+
+        .btn {
+            padding: 0.45rem 1.1rem; border-radius: 8px; border: none; cursor: pointer;
+            font-family: 'Space Grotesk', sans-serif; font-size: 0.8rem; font-weight: 600;
+            transition: all 0.2s;
         }
-        
-        /* Noise overlay */
-        .noise-overlay {
-            position: fixed;
-            inset: 0;
-            pointer-events: none;
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter name='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-            opacity: 0.03;
-            z-index: 1001;
-        }
-        
-        /* Theme toggle */
-        .theme-toggle {
-            @apply bg-[var(--bg-tertiary)] text-[var(--fg-secondary)] hover:text-[var(--fg-primary)] 
-                   border border-[var(--border)] rounded-full px-4 py-2 transition-colors;
-        }
-        
-        /* Card style */
-        .dashboard-card {
-            @apply bg-[var(--bg-secondary)] border border-[var(--border)] rounded-xl p-6 transition-all duration-300 hover:border-[var(--accent-cyan)];
-        }
-        
-        /* Button styles */
         .btn-primary {
-            @apply bg-[var(--accent-cyan)] text-[var(--bg-primary)] font-medium rounded-lg px-6 py-2.5 
-                   hover:bg-[#00f5c4] transition-colors shadow-lg shadow-[var(--accent-cyan)/20];
+            background: linear-gradient(135deg, var(--cyan), var(--cyan-dim));
+            color: var(--space-void);
+            box-shadow: 0 0 16px rgba(0,245,212,0.3);
         }
-        
-        .btn-secondary {
-            @apply bg-[var(--bg-tertiary)] text-[var(--fg-primary)] font-medium rounded-lg px-6 py-2.5 
-                   hover:bg-[var(--bg-primary)] transition-colors border border-[var(--border)];
+        .btn-primary:hover { box-shadow: 0 0 24px rgba(0,245,212,0.5); transform: translateY(-1px); }
+
+        .btn-ghost {
+            background: transparent; color: var(--fg-dim);
+            border: 1px solid var(--space-border);
         }
-        
-        /* Badge styles */
-        .badge {
-            @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium 
-                   bg-[var(--bg-tertiary)] text-[var(--fg-secondary)] border border-[var(--border)];
+        .btn-ghost:hover { border-color: var(--cyan); color: var(--cyan); }
+
+        /* ─── Main grid ────────────────────────────────────────────────────── */
+        #main-grid {
+            display: grid;
+            grid-template-columns: 300px 1fr 320px;
+            gap: 0.75rem;
+            height: calc(100vh - 100px);
         }
-        
-        .badge-accent {
-            @apply bg-[var(--accent-cyan)] text-[var(--bg-primary)];
+
+        /* ─── Panels ───────────────────────────────────────────────────────── */
+        .panel {
+            background: rgba(14,14,46,0.6);
+            border: 1px solid var(--space-border);
+            border-radius: 12px;
+            backdrop-filter: blur(16px);
+            overflow: hidden;
+            display: flex; flex-direction: column;
         }
-        
-        .badge-warning {
-            @apply bg-[var(--accent-orange)] text-[var(--bg-primary)];
+
+        .panel-header {
+            padding: 0.7rem 1rem;
+            border-bottom: 1px solid var(--space-border);
+            display: flex; align-items: center; justify-content: space-between;
+            flex-shrink: 0;
         }
-        
-        .badge-critical {
-            @apply bg-[var(--danger)] text-[var(--bg-primary)];
+
+        .panel-title {
+            font-size: 0.68rem; font-weight: 600; letter-spacing: 0.12em;
+            text-transform: uppercase; color: var(--fg-dim);
         }
-        
-        /* Loader styles */
-.loader {
-  width: 40px;
-  height: 40px;
-  border: 3px solid var(--bg-secondary);
-  border-top-color: var(--accent-cyan);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
+        .panel-body { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 0.75rem; }
 
-.loader-text {
-  @apply text-[var(--fg-secondary)] text-center mt-3 font-mono;
-}
+        /* ─── Left column ─────────────────────────────────────────────────── */
+        #left-col { display: flex; flex-direction: column; gap: 0.75rem; }
 
-/* Radar scan effect */
-.radar-scan {
-  position: absolute;
-  border: 2px solid var(--accent-cyan);
-  border-radius: 50%;
-  animation: radar-spin 2s linear infinite;
-}
+        /* ─── Radar Panel ─────────────────────────────────────────────────── */
+        #radar-panel { height: 260px; flex-shrink: 0; }
+        #radar-canvas { width: 100% !important; height: 100% !important; display: block; }
 
-@keyframes radar-spin {
-  from { transform: rotate(0deg) translateX(80px) rotate(0deg); }
-  to { transform: rotate(360deg) translateX(80px) rotate(-360deg); }
-}
+        /* ─── Market Tickers ──────────────────────────────────────────────── */
+        .ticker-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0.6rem 0.75rem;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.04);
+            margin-bottom: 0.4rem;
+            transition: all 0.3s;
+        }
+        .ticker-item:hover { border-color: var(--space-glow); }
+        .ticker-item.flash-up   { background: rgba(34,197,94,0.08); border-color: rgba(34,197,94,0.3); }
+        .ticker-item.flash-down { background: rgba(239,68,68,0.08);  border-color: rgba(239,68,68,0.3); }
 
-/* Chart container */
-.chart-container {
-  position: relative;
-  height: 300px;
-  background: var(--bg-secondary);
-  border-radius: 12px;
-  border: 1px solid var(--border);
-}
+        .ticker-sym { font-size: 0.8rem; font-weight: 600; }
+        .ticker-price { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; font-weight: 600; }
+        .ticker-change {
+            font-family: 'JetBrains Mono', monospace; font-size: 0.7rem;
+            padding: 0.15rem 0.4rem; border-radius: 4px; font-weight: 600;
+        }
+        .up   { color: var(--green); }
+        .down { color: var(--red); }
+        .bg-up   { background: rgba(34,197,94,0.15); color: var(--green); }
+        .bg-down { background: rgba(239,68,68,0.15);  color: var(--red); }
 
-/* Table styles */
-.table-responsive {
-  overflow-x: auto;
-}
+        /* ─── Position table ──────────────────────────────────────────────── */
+        .pos-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
+        .pos-table th {
+            font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em;
+            color: var(--fg-muted); padding: 0.4rem 0.5rem; text-align: left;
+            border-bottom: 1px solid var(--space-border);
+        }
+        .pos-table td { padding: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.03); }
+        .pos-table tr:hover td { background: rgba(255,255,255,0.02); }
 
-.table {
-  min-width: 600px;
-}
+        /* ─── Center column: Charts ──────────────────────────────────────── */
+        #center-col { display: flex; flex-direction: column; gap: 0.75rem; }
 
-.table th {
-  background: var(--bg-tertiary);
-  border-bottom: 1px solid var(--border);
-  white-space: nowrap;
-}
+        .chart-panel { flex: 1; min-height: 0; }
+        .chart-canvas-wrap { position: relative; flex: 1; min-height: 0; }
+        canvas.chart-c { display: block; width: 100% !important; }
 
-.table td {
-  border-bottom: 1px solid var(--border);
-  white-space: nowrap;
-}
+        .chart-legend {
+            display: flex; align-items: center; gap: 1rem;
+            padding: 0.4rem 0.75rem;
+            border-top: 1px solid var(--space-border);
+            flex-shrink: 0;
+        }
+        .legend-item { display: flex; align-items: center; gap: 0.35rem; font-size: 0.7rem; color: var(--fg-dim); }
+        .legend-dot  { width: 8px; height: 8px; border-radius: 50%; }
 
-/* Focus ring */
-*:focus-visible {
-  outline: 2px solid var(--accent-cyan);
-  outline-offset: 2px;
-}
+        /* ─── Right column: AI Terminal + Portfolio ───────────────────────── */
+        #right-col { display: flex; flex-direction: column; gap: 0.75rem; }
+
+        /* ─── AI Terminal ─────────────────────────────────────────────────── */
+        #terminal-panel { flex: 1; min-height: 0; }
+        #terminal-body {
+            flex: 1; min-height: 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.68rem; line-height: 1.6;
+            overflow-y: auto; padding: 0.75rem;
+            background: rgba(2,2,15,0.6);
+        }
+        .term-line { margin-bottom: 0.25rem; display: flex; gap: 0.5rem; }
+        .term-agent {
+            min-width: 110px; font-weight: 600; flex-shrink: 0;
+            padding: 0.05rem 0.4rem; border-radius: 3px; font-size: 0.62rem; text-transform: uppercase;
+        }
+        .agent-fundamentals { background: rgba(0,245,212,0.15); color: var(--cyan); }
+        .agent-sentiment     { background: rgba(168,85,247,0.15); color: var(--violet); }
+        .agent-technical     { background: rgba(255,107,43,0.15); color: var(--orange); }
+        .agent-debaters_bull { background: rgba(34,197,94,0.15);  color: var(--green); }
+        .agent-debaters_bear { background: rgba(239,68,68,0.15);  color: var(--red); }
+        .agent-risk_manager  { background: rgba(251,191,36,0.15); color: var(--gold); }
+        .agent-system        { background: rgba(136,136,184,0.15); color: var(--fg-dim); }
+        .term-msg { color: var(--fg-dim); }
+        .cursor { display: inline-block; width: 7px; height: 12px; background: var(--cyan); animation: blink 1s steps(1) infinite; vertical-align: -1px; margin-left: 2px; }
+        @keyframes blink { 50% { opacity: 0; } }
+
+        /* ─── Portfolio Bars ──────────────────────────────────────────────── */
+        .alloc-item { margin-bottom: 0.75rem; }
+        .alloc-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem; }
+        .alloc-sym  { font-size: 0.75rem; font-weight: 600; }
+        .alloc-pct  { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--cyan); }
+        .alloc-bar-bg { height: 5px; border-radius: 3px; background: var(--space-border); overflow: hidden; }
+        .alloc-bar-fill { height: 100%; border-radius: 3px; transition: width 0.6s cubic-bezier(0.4,0,0.2,1); }
+
+        .alloc-stats { display: flex; gap: 0.5rem; margin-top: 0.2rem; }
+        .alloc-stat  { font-size: 0.65rem; color: var(--fg-muted); }
+
+        /* ─── Risk Metrics ────────────────────────────────────────────────── */
+        .metric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+        .metric-card {
+            padding: 0.6rem 0.75rem;
+            background: rgba(255,255,255,0.02); border-radius: 8px;
+            border: 1px solid var(--space-border);
+        }
+        .metric-label { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--fg-muted); }
+        .metric-value { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; font-weight: 600; margin-top: 0.2rem; }
+
+        /* ─── Bridge Status ────────────────────────────────────────────────── */
+        #bridge-widget {
+            position: fixed; bottom: 1rem; right: 1rem; z-index: 50;
+            padding: 0.75rem 1rem;
+            background: rgba(14,14,46,0.85); border: 1px solid var(--space-border);
+            border-radius: 10px; backdrop-filter: blur(20px);
+            font-size: 0.72rem; min-width: 200px;
+        }
+        .bridge-title { color: var(--fg-muted); text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.6rem; margin-bottom: 0.5rem; }
+        .bridge-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem; }
+        .bridge-label { color: var(--fg-dim); }
+        .bridge-val-connected   { color: var(--green); font-weight: 600; }
+        .bridge-val-simulated   { color: var(--yellow); font-weight: 600; }
+        .bridge-val-disconnected{ color: var(--red); }
+        .bridge-progress { width: 100%; height: 3px; background: var(--space-border); border-radius: 2px; overflow: hidden; margin-top: 0.5rem; }
+        .bridge-fill { height: 100%; background: linear-gradient(90deg, var(--cyan), var(--violet)); width: 0%; transition: width 0.3s; }
+
+        /* ─── Deep-Space Loader ───────────────────────────────────────────── */
+        #init-loader {
+            position: fixed; inset: 0; z-index: 1000;
+            background: var(--space-void);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            gap: 1.5rem; transition: opacity 0.8s ease;
+        }
+        #init-loader.hidden { opacity: 0; pointer-events: none; }
+
+        .loader-ring-wrap { position: relative; width: 120px; height: 120px; }
+        .loader-ring {
+            position: absolute; border-radius: 50%; border: 2px solid transparent;
+            animation: ring-spin linear infinite;
+        }
+        .ring-1 { inset: 0;   border-top-color: var(--cyan);   animation-duration: 1.2s; }
+        .ring-2 { inset: 14px; border-right-color: var(--violet); animation-duration: 2.0s; }
+        .ring-3 { inset: 28px; border-bottom-color: var(--orange); animation-duration: 3.0s; }
+        .ring-core {
+            position: absolute; inset: 42px; border-radius: 50%;
+            background: radial-gradient(circle, rgba(0,245,212,0.3), transparent);
+            animation: core-pulse 2s ease-in-out infinite;
+        }
+        @keyframes ring-spin    { to { transform: rotate(360deg); } }
+        @keyframes core-pulse   { 0%,100%{opacity:0.5;transform:scale(0.9);} 50%{opacity:1;transform:scale(1.1);} }
+
+        .loader-title {
+            font-size: 1.4rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase;
+            background: linear-gradient(90deg, var(--cyan), var(--violet));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .loader-sub { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--fg-dim); letter-spacing: 0.1em; }
+        #boot-log {
+            font-family: 'JetBrains Mono', monospace; font-size: 0.68rem;
+            color: var(--fg-dim); text-align: center; line-height: 1.8;
+            max-width: 400px;
+        }
+        .boot-ok   { color: var(--green); }
+        .boot-spin { color: var(--cyan);  }
+
+        /* ─── Scanning line effect ────────────────────────────────────────── */
+        .scan-line {
+            position: fixed; top: 0; left: 0; width: 100%; height: 2px; z-index: 999;
+            background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+            animation: scan-down 4s linear infinite; pointer-events: none; opacity: 0.15;
+        }
+        @keyframes scan-down { 0%{top:0%;} 100%{top:100%;} }
+
+        /* ─── Responsive ──────────────────────────────────────────────────── */
+        @media (max-width: 1100px) {
+            #main-grid { grid-template-columns: 260px 1fr; }
+            #right-col { display: none; }
+        }
+        @media (max-width: 700px) {
+            #main-grid { grid-template-columns: 1fr; }
+            #left-col  { display: none; }
+        }
     </style>
 </head>
 <body>
-    <!-- Background patterns -->
-    <div class="bg-pattern"></div>
-    <div class="noise-overlay"></div>
-    
-    <!-- Starfield canvas -->
-    <canvas id="starfield-canvas"></canvas>
-    
-    <div class="relative z-0 min-h-screen p-4 md:p-6">
-        <!-- Topbar -->
-        <header class="flex items-center justify-between mb-6 gap-4">
-            <div class="flex items-center gap-3">
-                <i data-lucide="zap" class="w-6 h-6 text-[var(--accent-cyan)]"></i>
-                <h1 class="text-2xl font-bold">AI Trading System</h1>
+
+<!-- Scanning line -->
+<div class="scan-line"></div>
+
+<!-- Starfield + Nebula -->
+<canvas id="starfield"></canvas>
+<div id="nebula"></div>
+
+<!-- Deep-Space Init Loader -->
+<div id="init-loader">
+    <div class="loader-ring-wrap">
+        <div class="loader-ring ring-1"></div>
+        <div class="loader-ring ring-2"></div>
+        <div class="loader-ring ring-3"></div>
+        <div class="ring-core"></div>
+    </div>
+    <div class="loader-title">NEXUS</div>
+    <div class="loader-sub">AI Trading System — Initializing</div>
+    <div id="boot-log"></div>
+</div>
+
+<!-- Main App -->
+<div id="app">
+
+    <!-- Header -->
+    <header id="header">
+        <div class="logo">
+            <div class="logo-icon">N</div>
+            <div class="logo-text">
+                <div class="logo-name">NEXUS</div>
+                <div class="logo-sub">Multi-Asset AI Command</div>
             </div>
-            
-            <div class="flex items-center gap-3">
-                <button class="theme-toggle px-4 py-2" onclick="toggleTheme()">
-                    <i data-lucide="sun" class="w-4 h-4 hidden"></i>
-                    <i data-lucide="moon" class="w-4 h-4"></i>
-                </button>
-                <button class="btn-primary">Connect Wallet</button>
+        </div>
+
+        <div class="header-status">
+            <div class="status-dot" id="ws-status">
+                <span class="dot dot-warn" id="ws-dot"></span>
+                <span id="ws-label">CONNECTING</span>
             </div>
-        </header>
-        
-        <!-- Main panels -->
-        <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-            
-            <!-- Left Column -->
-            <div class="space-y-4">
-                
-                <!-- Radar Panel -->
-                <div>
-                    <h2 class="text-sm font-medium uppercase tracking-wider text-[var(--fg-secondary)] mb-3">Market Radar</h2>
-                    <div class="relative h-64 rounded-lg overflow-hidden dashboard-card">
-                        <canvas id="radar-canvas" class="radar-scan"></canvas>
-                        <div class="absolute inset-0 flex items-center justify-center">
-                            <div class="text-[var(--fg-secondary)] font-mono">SCANNING...</div>
-                        </div>
-                    </div>
+            <div class="status-dot">
+                <span class="dot dot-live"></span>
+                <span>BLOCKCHAIN ACTIVE</span>
+            </div>
+            <div class="status-dot">
+                <span id="utc-clock" style="font-size:0.72rem; font-family:'JetBrains Mono',monospace; color:var(--fg-dim);"></span>
+            </div>
+            <button class="btn btn-primary" id="engine-toggle">⚡ START ENGINE</button>
+            <button class="btn btn-ghost" onclick="window.open('/docs','_blank')">API Docs</button>
+        </div>
+    </header>
+
+    <!-- Main Grid -->
+    <div id="main-grid">
+
+        <!-- ═══ LEFT COLUMN ════════════════════════════════════════════════ -->
+        <div id="left-col">
+
+            <!-- Radar -->
+            <div class="panel" id="radar-panel" style="height:260px;flex-shrink:0;">
+                <div class="panel-header">
+                    <span class="panel-title">🛰 Market Radar</span>
+                    <span style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--cyan);" id="radar-label">SCANNING</span>
                 </div>
-                
-                <!-- Active Positions -->
-                <div>
-                    <h2 class="text-sm font-medium uppercase tracking-wider text-[var(--fg-secondary)] mb-3">Active Positions</h2>
-                    <div class="dashboard-card p-4">
-                        <div class="table-responsive">
-                            <table class="table w-full">
-                                <thead>
-                                    <tr class="text-left">
-                                        <th class="py-3 px-4">Symbol</th>
-                                        <th class="py-3 px-4">Side</th>
-                                        <th class="py-3 px-4">Size</th>
-                                        <th class="py-3 px-4">Entry</th>
-                                        <th class="py-3 px-4">P/L</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="positions-table">
-                                    <tr class="text-center">
-                                        <td colspan="5" class="py-8 text-[var(--fg-secondary)]">No active positions</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                <canvas id="radar-canvas"></canvas>
+            </div>
+
+            <!-- Market Tickers -->
+            <div class="panel" style="flex-shrink:0;">
+                <div class="panel-header">
+                    <span class="panel-title">📡 Live Prices</span>
+                    <span style="font-size:0.65rem;color:var(--fg-muted);">1s tick</span>
                 </div>
-                
-                <!-- Terminal Log -->
-                <div>
-                    <h2 class="text-sm font-medium uppercase tracking-wider text-[var(--fg-secondary)] mb-3">Live Terminal</h2>
-                    <div class="dashboard-card h-64">
-                        <div class="h-full overflow-x-auto p-4">
-                            <pre id="terminal-log" class="text-[var(--fg-secondary)] text-xs font-mono whitespace-pre-wrap">
-Initializing AI Trading System...
-LangGraph agents online...
-Dual-market execution ready...
-</pre>
-                        </div>
+                <div class="panel-body" style="padding:0.5rem;">
+                    <div class="ticker-item" id="tick-BTCUSDT">
+                        <span class="ticker-sym" style="color:var(--gold);">BTC/USDT</span>
+                        <span class="ticker-price" id="price-BTCUSDT">$ ——</span>
+                        <span class="ticker-change bg-up" id="chg-BTCUSDT">+0.00%</span>
+                    </div>
+                    <div class="ticker-item" id="tick-ETHUSDT">
+                        <span class="ticker-sym" style="color:var(--violet);">ETH/USDT</span>
+                        <span class="ticker-price" id="price-ETHUSDT">$ ——</span>
+                        <span class="ticker-change bg-up" id="chg-ETHUSDT">+0.00%</span>
+                    </div>
+                    <div class="ticker-item" id="tick-EURUSD">
+                        <span class="ticker-sym" style="color:var(--orange);">EUR/USD</span>
+                        <span class="ticker-price" id="price-EURUSD">——</span>
+                        <span class="ticker-change bg-up" id="chg-EURUSD">+0.00%</span>
                     </div>
                 </div>
             </div>
-            
-            <!-- Right Column -->
-            <div class="space-y-4">
-                
-                <!-- Portfolio Allocation -->
-                <div>
-                    <h2 class="text-sm font-medium uppercase tracking-wider text-[var(--fg-secondary)] mb-3">Portfolio Allocation</h2>
-                    <div class="dashboard-card p-4">
-                        <div class="space-y-3">
-                            <div class="flex items-center justify-between">
-                                <span class="text-[var(--fg-secondary)]">BTC/USD</span>
-                                <span class="font-mono" id="btc-allocation">0.00%</span>
-                            </div>
-                            <div class="h-2 rounded-full bg-[var(--bg-tertiary)] overflow-hidden">
-                                <div class="h-full bg-gradient-to-r from-[var(--accent-cyan)] to-[var(--accent-purple)] transition-width" style="width: 0%;"></div>
-                            </div>
-                            <div class="flex items-center text-xs" id="btc-risk">
-                                <span class="text-[var(--fg-secondary)]">Risk: Medium</span>
-                            </div>
-                        </div>
-                        
-                        <div class="flex items-center justify-between">
-                            <span class="text-[var(--fg-secondary)]">ETH/USD</span>
-                            <span class="font-mono" id="eth-allocation">0.00%</span>
-                        </div>
-                        <div class="h-2 rounded-full bg-[var(--bg-tertiary)] overflow-hidden">
-                            <div class="h-full bg-gradient-to-r from-[var(--accent-orange)] to-[var(--accent-cyan)] transition-width" style="width: 0%;"></div>
-                        </div>
-                        <div class="flex items-center text-xs" id="eth-risk">
-                            <span class="text-[var(--fg-secondary)]">Risk: Medium</span>
-                        </div>
-                        
-                        <div class="mt-3">
-                            <span class="text-[var(--fg-secondary)]">BTC (Crypto)</span>
-                            <span class="text-[var(--fg-secondary)] ms-2" id="btc-status">Loading...</span>
-                        </div>
-                        <div class="mt-2">
-                            <span class="text-[var(--fg-secondary)]">ETH (Crypto)</span>
-                            <span class="text-[var(--fg-secondary)] ms-2" id="eth-status">Loading...</span>
-                        </div>
-                    </div>
+
+            <!-- Positions Table -->
+            <div class="panel" style="flex:1;min-height:0;">
+                <div class="panel-header">
+                    <span class="panel-title">📊 Active Positions</span>
+                    <span class="dot dot-live" style="width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);"></span>
                 </div>
-                
-                <!-- Market Data & Forecast -->
-                <div>
-                    <h2 class="text-sm font-medium uppercase tracking-wider text-[var(--fg-secondary)] mb-3">Market Forecast</h2>
-                    <div class="dashboard-card p-4">
-                        <div class="space-y-4">
-                            
-                            <div>
-                                <h3 class="text-xs font-medium uppercase tracking-wider text-[var(--fg-secondary)] mb-2">BTC/USD</h3>
-                                <div class="chart-container">
-                                    <canvas id="btc-forecast-canvas"></canvas>
-                                </div>
-                                <div class="flex items-center justify-between text-xs">
-                                    <span class="text-[var(--fg-secondary)]" id="btc-current-price">--</span>
-                                    <span class="text-[var(--accent-cyan)] font-medium" id="btc-direction">--</span>
-                                </div>
-                            </div>
-                            
-                            <div>
-                                <h3 class="text-xs font-medium uppercase tracking-wider text-[var(--fg-secondary)] mb-2">ETH/USD</h3>
-                                <div class="chart-container">
-                                    <canvas id="eth-forecast-canvas"></canvas>
-                                </div>
-                                <div class="flex items-center justify-between text-xs">
-                                    <span class="text-[var(--fg-secondary)]" id="eth-current-price">--</span>
-                                    <span class="text-[var(--accent-cyan)] font-medium" id="eth-direction">--</span>
-                                </div>
-                            </div>
-                            
-                            <div>
-                                <h3 class="text-xs font-medium uppercase tracking-wider text-[var(--fg-secondary)] mb-2">EUR/USD</h3>
-                                <div class="chart-container">
-                                    <canvas id="eur-forecast-canvas"></canvas>
-                                </div>
-                                <div class="flex items-center justify-between text-xs">
-                                    <span class="text-[var(--fg-secondary)]" id="eur-current-price">--</span>
-                                    <span class="text-[var(--accent-orange)] font-medium" id="eur-direction">--</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                <div class="panel-body">
+                    <table class="pos-table">
+                        <thead>
+                            <tr>
+                                <th>Symbol</th><th>Side</th><th>Size</th><th>P/L</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pos-body">
+                            <tr><td colspan="4" style="color:var(--fg-muted);text-align:center;padding:1.5rem;">No open positions</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
-    </div>
-    
-    <!-- Forex Bridge Status -->
-    <div class="fixed bottom-6 right-6 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg p-4 max-w-sm z-20">
-        <h3 class="text-xs font-medium uppercase tracking-wider text-[var(--fg-secondary)] mb-2">MQL5 Bridge</h3>
-        <div class="space-y-2">
-            <div class="flex items-center justify-between">
-                <span class="text-[var(--fg-secondary)]">EUR/USD Bridge</span>
-                <span id="bridge-status" class="text-[var(--accent-orange)] font-medium">Disconnected</span>
+
+        <!-- ═══ CENTER COLUMN: Charts ════════════════════════════════════ -->
+        <div id="center-col">
+
+            <!-- BTC Chart -->
+            <div class="panel chart-panel">
+                <div class="panel-header">
+                    <span class="panel-title">₿ BTC/USDT — Kronos Forecast</span>
+                    <span style="font-size:0.7rem;color:var(--fg-dim);" id="btc-dir-label">Direction: —</span>
+                </div>
+                <div class="chart-canvas-wrap" style="height:200px;padding:0.5rem;">
+                    <canvas id="btc-chart" class="chart-c" style="height:200px;"></canvas>
+                </div>
+                <div class="chart-legend">
+                    <div class="legend-item"><div class="legend-dot" style="background:var(--cyan);"></div>Price</div>
+                    <div class="legend-item"><div class="legend-dot" style="background:var(--violet);opacity:0.6;"></div>Kronos Band</div>
+                </div>
             </div>
-            <progress id="bridge-progress" class="w-24 h-2 rounded-full bg-[var(--bg-tertiary)]" value="0" max="100"></progress>
+
+            <!-- ETH Chart -->
+            <div class="panel chart-panel">
+                <div class="panel-header">
+                    <span class="panel-title">Ξ ETH/USDT — Kronos Forecast</span>
+                    <span style="font-size:0.7rem;color:var(--fg-dim);" id="eth-dir-label">Direction: —</span>
+                </div>
+                <div class="chart-canvas-wrap" style="height:180px;padding:0.5rem;">
+                    <canvas id="eth-chart" class="chart-c" style="height:180px;"></canvas>
+                </div>
+            </div>
+
+            <!-- EUR/USD Chart -->
+            <div class="panel chart-panel">
+                <div class="panel-header">
+                    <span class="panel-title">€ EUR/USD — PulseHyperHybrid</span>
+                    <span style="font-size:0.7rem;color:var(--fg-dim);" id="eur-dir-label">Direction: —</span>
+                </div>
+                <div class="chart-canvas-wrap" style="height:160px;padding:0.5rem;">
+                    <canvas id="eur-chart" class="chart-c" style="height:160px;"></canvas>
+                </div>
+                <div class="chart-legend">
+                    <div class="legend-item"><div class="legend-dot" style="background:var(--orange);"></div>EUR/USD Price</div>
+                    <div class="legend-item"><div class="legend-dot" style="background:var(--yellow);opacity:0.6;"></div>EMA Signal</div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ═══ RIGHT COLUMN ══════════════════════════════════════════════ -->
+        <div id="right-col">
+
+            <!-- AI Agent Terminal -->
+            <div class="panel" id="terminal-panel" style="flex:1;min-height:0;">
+                <div class="panel-header">
+                    <span class="panel-title">🧠 LangGraph Agent Debate</span>
+                    <span style="font-size:0.65rem;font-family:'JetBrains Mono',monospace;color:var(--violet);" id="agent-count">0 messages</span>
+                </div>
+                <div id="terminal-body"></div>
+            </div>
+
+            <!-- Portfolio Allocation -->
+            <div class="panel" style="flex-shrink:0;">
+                <div class="panel-header">
+                    <span class="panel-title">⚖ HRP Portfolio Allocation</span>
+                    <span style="font-size:0.65rem;color:var(--fg-muted);">CVaR(95%)</span>
+                </div>
+                <div class="panel-body">
+                    <div class="alloc-item">
+                        <div class="alloc-header">
+                            <span class="alloc-sym" style="color:var(--gold);">BTC/USDT</span>
+                            <span class="alloc-pct" id="alloc-btc">18.2%</span>
+                        </div>
+                        <div class="alloc-bar-bg"><div class="alloc-bar-fill" id="bar-btc" style="width:18.2%;background:linear-gradient(90deg,var(--gold),var(--cyan));"></div></div>
+                        <div class="alloc-stats"><span class="alloc-stat">CVaR: <span id="cvar-btc">2.14%</span></span><span class="alloc-stat">VaR: <span id="var-btc">1.73%</span></span></div>
+                    </div>
+                    <div class="alloc-item">
+                        <div class="alloc-header">
+                            <span class="alloc-sym" style="color:var(--violet);">ETH/USDT</span>
+                            <span class="alloc-pct" id="alloc-eth">11.4%</span>
+                        </div>
+                        <div class="alloc-bar-bg"><div class="alloc-bar-fill" id="bar-eth" style="width:11.4%;background:linear-gradient(90deg,var(--violet),var(--cyan));"></div></div>
+                        <div class="alloc-stats"><span class="alloc-stat">CVaR: <span id="cvar-eth">3.52%</span></span><span class="alloc-stat">VaR: <span id="var-eth">2.81%</span></span></div>
+                    </div>
+                    <div class="alloc-item">
+                        <div class="alloc-header">
+                            <span class="alloc-sym" style="color:var(--orange);">EUR/USD</span>
+                            <span class="alloc-pct" id="alloc-eur">8.7%</span>
+                        </div>
+                        <div class="alloc-bar-bg"><div class="alloc-bar-fill" id="bar-eur" style="width:8.7%;background:linear-gradient(90deg,var(--orange),var(--yellow));"></div></div>
+                        <div class="alloc-stats"><span class="alloc-stat">CVaR: <span id="cvar-eur">0.82%</span></span><span class="alloc-stat">VaR: <span id="var-eur">0.65%</span></span></div>
+                    </div>
+
+                    <!-- Risk metrics -->
+                    <div class="metric-grid" style="margin-top:0.75rem;">
+                        <div class="metric-card">
+                            <div class="metric-label">Port. Vol (Ann.)</div>
+                            <div class="metric-value" id="port-vol" style="color:var(--yellow);">—</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Port. CVaR</div>
+                            <div class="metric-value" id="port-cvar" style="color:var(--red);">—</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Sharpe Ratio</div>
+                            <div class="metric-value" id="sharpe" style="color:var(--green);">—</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Chain Blocks</div>
+                            <div class="metric-value" id="chain-blocks" style="color:var(--cyan);">—</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
-    
-    <script>
-        // Initialize variables first
-        let starfieldCtx = null;
-        let radarCtx = null;
-        let btcForecastCtx = null;
-        let ethForecastCtx = null;
-        let eurForecastCtx = null;
-        
-        // Theme system
-        const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
-        
-        function toggleTheme() {
-            document.body.classList.toggle('dark');
-            const isDark = document.body.classList.contains('dark');
-            localStorage.setItem('theme', isDark ? 'dark' : 'light');
-            
-            // Update icon
-            const moonIcon = document.querySelector('i[data-lucide="moon"]');
-            const sunIcon = document.querySelector('i[data-lucide="sun"]');
-            if (moonIcon) moonIcon.classList.toggle('hidden', !isDark);
-            if (sunIcon) sunIcon.classList.toggle('hidden', isDark);
-            
-            lucide.createIcons();
-        }
-        
-        // Set initial theme
-        if (localStorage.getItem('theme') === 'dark' || 
-            (!localStorage.getItem('theme') && prefersDarkScheme.matches)) {
-            document.body.classList.add('dark');
-            document.querySelector('i[data-lucide="moon"]').classList.remove('hidden');
-        }
-        
-        // Initialize Lucide icons
-        lucide.createIcons();
-        
-        // --- Starfield Canvas ---
-        function initStarfield() {
-            const canvas = document.getElementById('starfield-canvas');
-            const canvasContainer = canvas.parentElement;
-            
-            function resizeCanvas() {
-                canvas.width = canvasContainer.clientWidth;
-                canvas.height = canvasContainer.clientHeight;
+</div>
+
+<!-- MT5 Bridge Status Widget -->
+<div id="bridge-widget">
+    <div class="bridge-title">🔗 MQL5 Bridge — PulseHyperHybrid</div>
+    <div class="bridge-row"><span class="bridge-label">EUR/USD</span><span class="bridge-val-simulated" id="bridge-eur">SIMULATED</span></div>
+    <div class="bridge-row"><span class="bridge-label">MT5 Server</span><span class="bridge-val-simulated" id="bridge-server">127.0.0.1</span></div>
+    <div class="bridge-row"><span class="bridge-label">Last Tick</span><span style="color:var(--fg-dim);font-family:'JetBrains Mono',monospace;font-size:0.7rem;" id="bridge-tick">—</span></div>
+    <div class="bridge-progress"><div class="bridge-fill" id="bridge-fill"></div></div>
+</div>
+
+<script>
+"use strict";
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  Boot Sequence
+// ══════════════════════════════════════════════════════════════════════════════
+
+const BOOT_STEPS = [
+    { msg: "PostgreSQL connected",         ok: true,  delay: 300 },
+    { msg: "Redis / Celery online",         ok: true,  delay: 400 },
+    { msg: "JWT RBAC loaded (admin: Lalit)",ok: true,  delay: 350 },
+    { msg: "Binance WS adapter ready",      ok: true,  delay: 500 },
+    { msg: "MT5 bridge → simulation mode",  ok: true,  delay: 300 },
+    { msg: "LangGraph agents initialized",  ok: true,  delay: 600 },
+    { msg: "Kronos decoder loaded",         ok: true,  delay: 700 },
+    { msg: "HRP / CVaR optimizer ready",    ok: true,  delay: 350 },
+    { msg: "Pine Script transpiler online", ok: true,  delay: 300 },
+    { msg: "C++ Security Profiler active",  ok: true,  delay: 400 },
+    { msg: "Blockchain ledger — GENESIS OK",ok: true,  delay: 500 },
+    { msg: "Deep-Space UI loaded ✓",        ok: true,  delay: 200 },
+];
+
+const bootLog = document.getElementById('boot-log');
+
+async function runBootSequence() {
+    for (const step of BOOT_STEPS) {
+        await new Promise(r => setTimeout(r, step.delay));
+        const div = document.createElement('div');
+        div.innerHTML = `<span class="${step.ok ? 'boot-ok' : 'boot-spin'}">${step.ok ? '✓' : '○'}</span> ${step.msg}`;
+        bootLog.appendChild(div);
+    }
+    await new Promise(r => setTimeout(r, 600));
+    document.getElementById('init-loader').classList.add('hidden');
+}
+
+runBootSequence();
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  UTC Clock
+// ══════════════════════════════════════════════════════════════════════════════
+setInterval(() => {
+    document.getElementById('utc-clock').textContent =
+        new Date().toUTCString().slice(17, 25) + ' UTC';
+}, 1000);
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  Starfield Canvas — Physics-based star triangulation
+// ══════════════════════════════════════════════════════════════════════════════
+
+const sfCanvas = document.getElementById('starfield');
+const sfCtx = sfCanvas.getContext('2d');
+let stars = [], connections = [];
+let marketVelocity = 0; // modulated by live price change
+
+function resizeStarfield() {
+    sfCanvas.width  = window.innerWidth;
+    sfCanvas.height = window.innerHeight;
+    initStars();
+}
+
+function initStars() {
+    const N = Math.floor(sfCanvas.width * sfCanvas.height / 6000);
+    stars = Array.from({ length: N }, () => ({
+        x:    Math.random() * sfCanvas.width,
+        y:    Math.random() * sfCanvas.height,
+        z:    Math.random(),
+        vx:   (Math.random() - 0.5) * 0.08,
+        vy:   (Math.random() - 0.5) * 0.08,
+        r:    Math.random() * 1.5 + 0.3,
+        brightness: Math.random(),
+        hue:  Math.random() < 0.15 ? 180 :    // cyan
+               Math.random() < 0.1  ? 270 :   // violet
+               0,                              // white
+    }));
+}
+
+// Delaunay-like neighbor connections (simplified: distance threshold)
+function updateConnections() {
+    connections = [];
+    const threshold = 80 + marketVelocity * 100;
+    for (let i = 0; i < stars.length; i++) {
+        for (let j = i + 1; j < stars.length; j++) {
+            const dx = stars[i].x - stars[j].x;
+            const dy = stars[i].y - stars[j].y;
+            const d2 = dx*dx + dy*dy;
+            if (d2 < threshold * threshold) {
+                connections.push([i, j, Math.sqrt(d2), threshold]);
             }
-            resizeCanvas();
-            window.addEventListener('resize', resizeCanvas);
-            
-            starfieldCtx = canvas.getContext('2d');
-            if (!starfieldCtx) return;
-            
-            const stars = [];
-            const particleCount = Math.floor((canvas.width * canvas.height) / 1500);
-            
-            for (let i = 0; i < particleCount; i++) {
-                stars.push({
-                    x: Math.random() * canvas.width,
-                    y: Math.random() * canvas.height,
-                    z: Math.random(),
-                    size: Math.random() * 2 + 0.5,
-                    speed: Math.random() * 0.02 + 0.005,
-                    brightness: Math.random() * 0.5 + 0.5
-                });
-            }
-            
-            function drawStarfield() {
-                starfieldCtx.fillStyle = '#050511';
-                starfieldCtx.fillRect(0, 0, canvas.width, canvas.height);
-                
-                stars.forEach(star => {
-                    star.y += star.speed;
-                    star.x += Math.sin(star.y * 0.01) * 0.5;
-                    
-                    if (star.y > canvas.height) {
-                        star.y = 0;
-                        star.x = Math.random() * canvas.width;
-                    }
-                    
-                    const opacity = 0.5 + star.brightness * 0.5;
-                    starfieldCtx.fillStyle = `rgba(0, 212, 170, ${opacity * 0.3})`;
-                    starfieldCtx.beginPath();
-                    starfieldCtx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
-                    starfieldCtx.fill();
-                });
-                
-                requestAnimationFrame(drawStarfield);
-            }
-            
-            drawStarfield();
         }
-        
-        // --- Radar Canvas ---
-        function initRadar() {
-            const canvas = document.getElementById('radar-canvas');
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
-            const radius = Math.min(canvas.width, canvas.height) * 0.4;
-            
-            radarCtx = canvas.getContext('2d');
-            if (!radarCtx) return;
-            
-            canvas.width = 300;
-            canvas.height = 300;
-            
-            function drawRadar() {
-                radarCtx.clearRect(0, 0, canvas.width, canvas.height);
-                
-                // Draw background circle
-                radarCtx.fillStyle = 'var(--bg-secondary)';
-                radarCtx.fillRect(0, 0, canvas.width, canvas.height);
-                
-                // Draw orbit paths
-                radarCtx.strokeStyle = 'var(--border)';
-                radarCtx.lineWidth = 1;
-                for (let i = 1; i <= 4; i++) {
-                    radarCtx.beginPath();
-                    radarCtx.arc(centerX, centerY, radius * (i / 5), 0, Math.PI * 2);
-                    radarCtx.stroke();
-                }
-                
-                // Draw center
-                radarCtx.fillStyle = '#0f0f20';
-                radarCtx.beginPath();
-                radarCtx.arc(centerX, centerY, 8, 0, Math.PI * 2);
-                radarCtx.fill();
-                
-                // Draw scan line
-                radarCtx.strokeStyle = '#00d4aa';
-                radarCtx.lineWidth = 2;
-                radarCtx.beginPath();
-                radarCtx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-                radarCtx.stroke();
-                
-                // Draw scan rotating line
-                const angle = (Date.now() / 20) % 360;
-                radarCtx.save();
-                radarCtx.rotate(angle * Math.PI / 180);
-                radarCtx.beginPath();
-                radarCtx.moveTo(centerX, centerY);
-                radarCtx.lineTo(centerX + radius * 0.8, centerY);
-                radarCtx.strokeStyle = '#00d4aa';
-                radarCtx.lineWidth = 2;
-                radarCtx.stroke();
-                radarCtx.restore();
-                
-                // Plot market points (simulated)
-                radarCtx.fillStyle = '#a855f7';
-                const numPoints = 8;
-                for (let i = 0; i < numPoints; i++) {
-                    const pointAngle = (i / numPoints * 360 + Date.now() / 100) % 360;
-                    const pointRadius = radius * 0.6 + Math.sin(Date.now() / 500 + i) * 0.1;
-                    const px = centerX + Math.cos(pointAngle * Math.PI / 180) * pointRadius;
-                    const py = centerY + Math.sin(pointAngle * Math.PI / 180) * pointRadius;
-                    
-                    radarCtx.beginPath();
-                    radarCtx.arc(px, py, 3, 0, Math.PI * 2);
-                    radarCtx.fill();
-                }
-                
-                requestAnimationFrame(drawRadar);
-            }
-            
-            drawRadar();
+    }
+}
+
+let lastConnUpdate = 0;
+function drawStarfield(ts) {
+    sfCtx.clearRect(0, 0, sfCanvas.width, sfCanvas.height);
+    sfCtx.fillStyle = '#02020f';
+    sfCtx.fillRect(0, 0, sfCanvas.width, sfCanvas.height);
+
+    const speed = 0.3 + Math.abs(marketVelocity) * 2;
+
+    // Update star positions
+    for (const s of stars) {
+        s.x += s.vx * speed;
+        s.y += s.vy * speed;
+        if (s.x < 0) s.x = sfCanvas.width;
+        if (s.x > sfCanvas.width) s.x = 0;
+        if (s.y < 0) s.y = sfCanvas.height;
+        if (s.y > sfCanvas.height) s.y = 0;
+    }
+
+    // Update connections every ~500ms
+    if (ts - lastConnUpdate > 500) {
+        updateConnections();
+        lastConnUpdate = ts;
+    }
+
+    // Draw connections
+    for (const [i, j, d, max] of connections) {
+        const alpha = (1 - d / max) * 0.12;
+        const hue = stars[i].hue || stars[j].hue;
+        sfCtx.strokeStyle = hue === 180 ? `rgba(0,245,212,${alpha})` :
+                            hue === 270 ? `rgba(168,85,247,${alpha})` :
+                                         `rgba(200,200,255,${alpha * 0.6})`;
+        sfCtx.lineWidth = 0.6;
+        sfCtx.beginPath();
+        sfCtx.moveTo(stars[i].x, stars[i].y);
+        sfCtx.lineTo(stars[j].x, stars[j].y);
+        sfCtx.stroke();
+    }
+
+    // Draw stars
+    for (const s of stars) {
+        const brightness = 0.4 + s.brightness * 0.6 + Math.abs(marketVelocity) * 0.3;
+        if (s.hue === 180) {
+            sfCtx.fillStyle = `rgba(0,245,212,${brightness})`;
+        } else if (s.hue === 270) {
+            sfCtx.fillStyle = `rgba(168,85,247,${brightness})`;
+        } else {
+            sfCtx.fillStyle = `rgba(${180+Math.floor(brightness*75)},${180+Math.floor(brightness*75)},255,${brightness})`;
         }
-        
-        // --- Forecast Charts ---
-        function initForecastChart(canvasId, color) {
-            const canvas = document.getElementById(canvasId);
-            const ctx = canvas.getContext('2d');
-            if (!ctx) return null;
-            
-            canvas.width = canvas.parentElement.clientWidth;
-            canvas.height = 200;
-            
-            return ctx;
+        sfCtx.beginPath();
+        sfCtx.arc(s.x, s.y, s.r * (1 + Math.abs(marketVelocity) * 0.5), 0, Math.PI*2);
+        sfCtx.fill();
+    }
+
+    requestAnimationFrame(drawStarfield);
+}
+
+window.addEventListener('resize', resizeStarfield);
+resizeStarfield();
+requestAnimationFrame(drawStarfield);
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  Radar Canvas — Sweep reacting to live market data
+// ══════════════════════════════════════════════════════════════════════════════
+
+const radarCanvas = document.getElementById('radar-canvas');
+const rdCtx = radarCanvas.getContext('2d');
+let radarAngle = 0;
+let radarBlips = [];
+
+function resizeRadar() {
+    const p = radarCanvas.parentElement;
+    radarCanvas.width  = p.clientWidth;
+    radarCanvas.height = p.clientHeight - 36;
+}
+resizeRadar();
+window.addEventListener('resize', resizeRadar);
+
+function addRadarBlip(intensity) {
+    const cx = radarCanvas.width / 2, cy = radarCanvas.height / 2;
+    const R  = Math.min(cx, cy) * 0.85;
+    const r  = R * (0.2 + Math.random() * 0.8);
+    const a  = radarAngle + (Math.random() - 0.5) * 0.3;
+    radarBlips.push({
+        x: cx + Math.cos(a) * r,
+        y: cy + Math.sin(a) * r,
+        alpha: 1.0,
+        size: 3 + intensity * 5,
+        hue: Math.random() < 0.5 ? 180 : 270,
+    });
+    if (radarBlips.length > 60) radarBlips.shift();
+}
+
+function drawRadar() {
+    const cx = radarCanvas.width / 2, cy = radarCanvas.height / 2;
+    const R  = Math.min(cx, cy) * 0.85;
+
+    rdCtx.clearRect(0, 0, radarCanvas.width, radarCanvas.height);
+
+    // Background
+    rdCtx.fillStyle = 'rgba(2,2,15,0.5)';
+    rdCtx.fillRect(0, 0, radarCanvas.width, radarCanvas.height);
+
+    // Concentric circles
+    for (let i = 1; i <= 4; i++) {
+        rdCtx.strokeStyle = `rgba(30,30,82,${i === 4 ? 0.8 : 0.4})`;
+        rdCtx.lineWidth = i === 4 ? 1.5 : 0.8;
+        rdCtx.beginPath();
+        rdCtx.arc(cx, cy, R * i / 4, 0, Math.PI*2);
+        rdCtx.stroke();
+    }
+
+    // Cross hairs
+    rdCtx.strokeStyle = 'rgba(30,30,82,0.4)'; rdCtx.lineWidth = 0.8;
+    rdCtx.beginPath(); rdCtx.moveTo(cx - R, cy); rdCtx.lineTo(cx + R, cy); rdCtx.stroke();
+    rdCtx.beginPath(); rdCtx.moveTo(cx, cy - R); rdCtx.lineTo(cx, cy + R); rdCtx.stroke();
+
+    // Sweep fill
+    const sweepLen = Math.PI / 2.5;
+    const grad = rdCtx.createConicalGradient ?
+        null : null;  // fallback: draw arc segment
+    rdCtx.save();
+    rdCtx.translate(cx, cy);
+
+    // Sweep gradient arc
+    const g2 = rdCtx.createLinearGradient(
+        Math.cos(radarAngle - sweepLen) * R, Math.sin(radarAngle - sweepLen) * R,
+        Math.cos(radarAngle) * R, Math.sin(radarAngle) * R
+    );
+    g2.addColorStop(0, 'rgba(0,245,212,0)');
+    g2.addColorStop(1, 'rgba(0,245,212,0.08)');
+
+    rdCtx.fillStyle = g2;
+    rdCtx.beginPath();
+    rdCtx.moveTo(0, 0);
+    rdCtx.arc(0, 0, R, radarAngle - sweepLen, radarAngle);
+    rdCtx.closePath();
+    rdCtx.fill();
+
+    // Sweep line
+    rdCtx.strokeStyle = 'rgba(0,245,212,0.8)';
+    rdCtx.lineWidth = 1.5;
+    rdCtx.beginPath();
+    rdCtx.moveTo(0, 0);
+    rdCtx.lineTo(Math.cos(radarAngle) * R, Math.sin(radarAngle) * R);
+    rdCtx.stroke();
+
+    rdCtx.restore();
+
+    // Blips
+    radarBlips.forEach(b => {
+        b.alpha = Math.max(0, b.alpha - 0.008);
+        if (b.hue === 180) {
+            rdCtx.fillStyle = `rgba(0,245,212,${b.alpha})`;
+            rdCtx.shadowColor = 'rgba(0,245,212,0.8)';
+        } else {
+            rdCtx.fillStyle = `rgba(168,85,247,${b.alpha})`;
+            rdCtx.shadowColor = 'rgba(168,85,247,0.8)';
         }
-        
-        function drawPriceLine(ctx, priceData, color, minPrice, maxPrice) {
-            if (!ctx || !priceData || priceData.length === 0) return;
-            
-            const width = ctx.canvas.width;
-            const height = ctx.canvas.height;
-            const padding = 20;
-            
-            // Clear canvas
-            ctx.fillStyle = 'var(--bg-secondary)';
-            ctx.fillRect(0, 0, width, height);
-            
-            // Draw grid
-            ctx.strokeStyle = 'var(--border)';
-            ctx.lineWidth = 1;
-            
-            const priceRange = maxPrice - minPrice;
-            
-            for (let i = 0; i <= 5; i++) {
-                const y = padding + (height - padding * 2) * (i / 5);
-                ctx.beginPath();
-                ctx.moveTo(padding, y);
-                ctx.lineTo(width - padding, y);
-                ctx.stroke();
-                
-                // Label
-                const priceLabel = (maxPrice - priceRange * (i / 5)).toFixed(2);
-                ctx.fillStyle = 'var(--fg-secondary)';
-                ctx.font = '10px JetBrains Mono';
-                ctx.fillText(priceLabel, padding - 40, y + 4);
+        rdCtx.shadowBlur = 8;
+        rdCtx.beginPath();
+        rdCtx.arc(b.x, b.y, b.size * b.alpha, 0, Math.PI*2);
+        rdCtx.fill();
+        rdCtx.shadowBlur = 0;
+    });
+
+    // Center dot
+    rdCtx.fillStyle = 'var(--cyan)';
+    rdCtx.shadowColor = 'var(--cyan)'; rdCtx.shadowBlur = 12;
+    rdCtx.beginPath(); rdCtx.arc(cx, cy, 3, 0, Math.PI*2); rdCtx.fill();
+    rdCtx.shadowBlur = 0;
+
+    // Advance sweep
+    radarAngle += 0.025 + Math.abs(marketVelocity) * 0.05;
+
+    requestAnimationFrame(drawRadar);
+}
+drawRadar();
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  Price Chart Renderer
+// ══════════════════════════════════════════════════════════════════════════════
+
+const priceHistory = { BTCUSDT: [], ETHUSDT: [], EURUSD: [] };
+const MAX_HISTORY = 80;
+
+function drawPriceChart(canvasId, prices, color, bandHigh, bandLow) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const W = canvas.parentElement.clientWidth - 16;
+    const H = canvas.height || 200;
+    canvas.width = W;
+
+    if (prices.length < 2) return;
+
+    const minP = Math.min(...prices, ...(bandLow || prices)) * 0.9998;
+    const maxP = Math.max(...prices, ...(bandHigh || prices)) * 1.0002;
+    const range = maxP - minP || 1;
+
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = 'rgba(10,10,40,0.2)';
+    ctx.fillRect(0, 0, W, H);
+
+    const toX = i => (i / (prices.length - 1)) * W;
+    const toY = p => H - ((p - minP) / range) * H;
+
+    // Grid
+    ctx.strokeStyle = 'rgba(30,30,82,0.6)'; ctx.lineWidth = 0.5;
+    for (let i = 1; i < 4; i++) {
+        const y = H * i / 4;
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+        const priceLabel = (maxP - range * i / 4).toFixed(prices[0] < 10 ? 5 : 0);
+        ctx.fillStyle = 'rgba(136,136,184,0.5)';
+        ctx.font = '9px JetBrains Mono';
+        ctx.fillText(priceLabel, 3, y - 2);
+    }
+
+    // Confidence band
+    if (bandHigh && bandLow && bandHigh.length === prices.length) {
+        ctx.beginPath();
+        for (let i = 0; i < prices.length; i++) ctx.lineTo(toX(i), toY(bandHigh[i]));
+        for (let i = prices.length - 1; i >= 0; i--) ctx.lineTo(toX(i), toY(bandLow[i]));
+        ctx.closePath();
+        ctx.fillStyle = color.replace('1)', '0.08)').replace('rgb', 'rgba').replace(/^#/, 'rgba(') + '14)';
+        ctx.fillStyle = 'rgba(168,85,247,0.07)';
+        ctx.fill();
+    }
+
+    // Price area fill
+    const grad = ctx.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0, color.includes('#') ? color + '30' : color.replace('1)', '0.18)'));
+    grad.addColorStop(1, 'transparent');
+
+    ctx.beginPath();
+    for (let i = 0; i < prices.length; i++) {
+        i === 0 ? ctx.moveTo(toX(i), toY(prices[i])) : ctx.lineTo(toX(i), toY(prices[i]));
+    }
+    ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath();
+    ctx.fillStyle = grad; ctx.fill();
+
+    // Price line
+    ctx.strokeStyle = color; ctx.lineWidth = 1.8;
+    ctx.lineJoin = 'round';
+    ctx.shadowColor = color; ctx.shadowBlur = 6;
+    ctx.beginPath();
+    prices.forEach((p, i) => i === 0 ? ctx.moveTo(toX(i), toY(p)) : ctx.lineTo(toX(i), toY(p)));
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Last price dot
+    const lastX = toX(prices.length - 1);
+    const lastY = toY(prices[prices.length - 1]);
+    ctx.fillStyle = color; ctx.shadowColor = color; ctx.shadowBlur = 12;
+    ctx.beginPath(); ctx.arc(lastX, lastY, 3.5, 0, Math.PI*2); ctx.fill();
+    ctx.shadowBlur = 0;
+}
+
+function updateCharts() {
+    const btc = priceHistory.BTCUSDT;
+    const eth = priceHistory.ETHUSDT;
+    const eur = priceHistory.EURUSD;
+
+    // Generate simple Kronos confidence bands (±1% for demo)
+    const band = (arr, pct) => ({
+        hi: arr.map(p => p * (1 + pct)),
+        lo: arr.map(p => p * (1 - pct)),
+    });
+
+    if (btc.length > 1) {
+        const b = band(btc, 0.008);
+        drawPriceChart('btc-chart', btc, '#00f5d4', b.hi, b.lo);
+    }
+    if (eth.length > 1) {
+        const b = band(eth, 0.01);
+        drawPriceChart('eth-chart', eth, '#a855f7', b.hi, b.lo);
+    }
+    if (eur.length > 1) {
+        const b = band(eur, 0.003);
+        drawPriceChart('eur-chart', eur, '#ff6b2b', b.hi, b.lo);
+    }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  WebSocket — Market Data Feed
+// ══════════════════════════════════════════════════════════════════════════════
+
+let wsMarket, wsAgents;
+let wsRetryDelay = 1000;
+
+function connectMarketWS() {
+    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+    const url   = `${proto}://${location.hostname}:8000/ws/market`;
+
+    try {
+        wsMarket = new WebSocket(url);
+    } catch (e) {
+        startSimulation();
+        return;
+    }
+
+    wsMarket.onopen = () => {
+        setWSStatus(true);
+        wsRetryDelay = 1000;
+    };
+
+    wsMarket.onmessage = e => {
+        try {
+            const msg = JSON.parse(e.data);
+            if (msg.type === 'market_tick') {
+                handleMarketTick(msg.data);
             }
-            
-            // Draw price line
-            ctx.strokeStyle = color;
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            
-            priceData.forEach((price, index) => {
-                const x = padding + (width - padding * 2) * (index / (priceData.length - 1));
-                const y = padding + (height - padding * 2) * (1 - (price - minPrice) / priceRange);
-                
-                if (index === 0) {
-                    ctx.moveTo(x, y);
-                } else {
-                    ctx.lineTo(x, y);
-                }
-            });
-            
-            ctx.stroke();
-            
-            // Fill area under line
-            ctx.fillStyle = color + '20';
-            ctx.lineTo(width - padding, height - padding);
-            ctx.lineTo(padding, height - padding);
-            ctx.closePath();
-            ctx.fill();
-        }
-        
-        // --- Initialize all components ---
-        document.addEventListener('DOMContentLoaded', function() {
-            // Initialize starfield
-            initStarfield();
-            
-            // Initialize radar
-            initRadar();
-            
-            // Initialize forecast charts
-            btcForecastCtx = initForecastChart('btc-forecast-canvas', '#00d4aa');
-            ethForecastCtx = initForecastChart('eth-forecast-canvas', '#a855f7');
-            eurForecastCtx = initForecastChart('eur-forecast-canvas', '#ff6b35');
-            
-            // Simulated market data
-            let btcPrice = 68421.50;
-            let ethPrice = 3852.25;
-            let eurRate = 1.0845;
-            
-            // Simulated price history
-            const btcHistory = [];
-            const ethHistory = [];
-            const eurHistory = [];
-            
-            // Generate simulated historical data
-            for (let i = 0; i < 50; i++) {
-                const time = i;
-                const btcChange = (Math.random() - 0.5) * 100;
-                const ethChange = (Math.random() - 0.5) * 50;
-                const eurChange = (Math.random() - 0.5) * 0.005;
-                
-                btcPrice += btcChange;
-                ethPrice += ethChange;
-                eurRate += eurChange;
-                
-                btcHistory.push(btcPrice);
-                ethHistory.push(ethPrice);
-                eurHistory.push(eurRate);
+        } catch {}
+    };
+
+    wsMarket.onclose = wsMarket.onerror = () => {
+        setWSStatus(false);
+        setTimeout(connectMarketWS, Math.min(wsRetryDelay, 15000));
+        wsRetryDelay = Math.min(wsRetryDelay * 2, 15000);
+        startSimulation();
+    };
+}
+
+function connectAgentsWS() {
+    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+    const url   = `${proto}://${location.hostname}:8000/ws/agents`;
+
+    try {
+        wsAgents = new WebSocket(url);
+    } catch (e) { return; }
+
+    wsAgents.onmessage = e => {
+        try {
+            const msg = JSON.parse(e.data);
+            if (msg.type === 'agent_message') {
+                addTerminalLine(msg.agent, msg.message);
             }
-            
-            // Set initial prices
-            document.getElementById('btc-current-price').textContent = btcPrice.toLocaleString();
-            document.getElementById('eth-current-price').textContent = ethPrice.toLocaleString('currency', {currency: 'USD'});
-            document.getElementById('eur-current-price').textContent = eurRate.toFixed(5);
-            
-            // Set initial directions
-            document.getElementById('btc-direction').textContent = 'Neutral';
-            document.getElementById('eth-direction').textContent = 'Neutral';
-            document.getElementById('eur-direction').textContent = 'Neutral';
-            
-            // Set initial allocations
-            document.getElementById('btc-allocation').textContent = '12.50%';
-            document.getElementById('eth-allocation').textContent = '8.75%';
-            
-            // Animation loops
-            setInterval(function() {
-                // Update prices with small random walks
-                const btcChange = (Math.random() - 0.5) * 50;
-                const ethChange = (Math.random() - 0.5) * 10;
-                const eurChange = (Math.random() - 0.5) * 0.002;
-                
-                btcPrice += btcChange;
-                ethPrice += ethChange;
-                eurRate += eurChange;
-                
-                document.getElementById('btc-current-price').textContent = btcPrice.toLocaleString();
-                document.getElementById('eth-current-price').textContent = ethPrice.toFixed(2) + ' USD';
-                document.getElementById('eur-current-price').textContent = eurRate.toFixed(5);
-                
-                // Update direction indicators
-                const btcDir = btcChange > 0 ? 'Long' : btcChange < 0 ? 'Short' : 'Neutral';
-                const ethDir = ethChange > 0 ? 'Long' : ethChange < 0 ? 'Short' : 'Neutral';
-                const eurDir = eurChange > 0 ? 'Long' : eurChange < 0 ? 'Short' : 'Neutral';
-                
-                document.getElementById('btc-direction').textContent = btcDir;
-                document.getElementById('eth-direction').textContent = ethDir;
-                document.getElementById('eur-direction').textContent = eurDir;
-                
-                // Update allocation progress bars
-                const btcPct = Math.min(30, 10 + Math.abs(btcChange) / 10);
-                const ethPct = Math.min(25, 8 + Math.abs(ethChange) / 15);
-                
-                document.getElementById('btc-allocation').textContent = btcPct.toFixed(2) + '%';
-                document.getElementById('eth-allocation').textContent = ethPct.toFixed(2) + '%';
-                
-                document.getElementById('btc-direction').parentElement.nextElementSibling?.previousElementSibling?.textContent === 'Long' ?
-                    document.getElementById('btc-allocation').previousElementSibling?.classList.add('bg-[var(--accent-cyan)]') : '';
-            }, 1000);
-            
-            // Terminal log updates
-            const terminalLog = document.getElementById('terminal-log');
-            const initialLogs = [
-                '✅ RBAC authentication verified (admin: Lalit)',
-                '✅ Dual-market execution adapter connected',
-                '✅ LangGraph AI agents online (Fundamentals, Sentiment, Technical, Debaters, Risk)',
-                '✅ Kronos probabilistic forecasting initialized',
-                '✅ HRP/CVaR portfolio allocation active',
-                '✅ Pine Script transpilation layer ready',
-                '✅ C++ security profiler monitoring',
-                '✅ Deep-space frontend loaded with starfield radar'
-            ];
-            
-            let logIndex = 0;
-            setInterval(() => {
-                if (logIndex < initialLogs.length) {
-                    terminalLog.textContent += initialLogs[logIndex] + '\n';
-                    logIndex++;
-                }
-            }, 800);
+        } catch {}
+    };
+
+    wsAgents.onclose = () => setTimeout(connectAgentsWS, 5000);
+}
+
+function setWSStatus(connected) {
+    const dot   = document.getElementById('ws-dot');
+    const label = document.getElementById('ws-label');
+    if (connected) {
+        dot.className = 'dot dot-live';
+        label.textContent = 'LIVE';
+    } else {
+        dot.className = 'dot dot-warn';
+        label.textContent = 'SIMULATED';
+    }
+}
+
+// ── Simulation mode (no backend running) ─────────────────────────────────────
+let simInterval;
+let simPrices = { BTCUSDT: 65000, ETHUSDT: 3500, EURUSD: 1.0845 };
+let simTick = 0;
+
+function startSimulation() {
+    if (simInterval) return;
+    setWSStatus(false);
+    simInterval = setInterval(() => {
+        simTick++;
+        const data = {};
+        ['BTCUSDT','ETHUSDT','EURUSD'].forEach(sym => {
+            const vol = sym === 'EURUSD' ? 0.0003 : sym === 'ETHUSDT' ? 8 : 80;
+            const delta = (Math.random() - 0.5) * vol * 2;
+            simPrices[sym] = Math.max(simPrices[sym] + delta, 0.001);
+            data[sym] = {
+                price:      simPrices[sym],
+                change_pct: delta / simPrices[sym] * 100,
+            };
         });
-    </script>
+        handleMarketTick(data);
+
+        // Simulate agent messages
+        if (simTick % 4 === 0) {
+            const agents = ['fundamentals','sentiment','technical','debaters_bull','debaters_bear','risk_manager'];
+            const msgs = [
+                'Analyzing EUR/USD macro backdrop: ECB rate hold expected…',
+                'BTC on-chain: 12,450 BTC moved to cold storage — bullish',
+                'RSI(14): 54.2 — neutral zone. SMA20 support holding at $64,820',
+                'Bull case: DXY weakening, EUR momentum building — LONG 68%',
+                'Bear case: Risk-off flows, geopolitical tension — SHORT 58%',
+                `HRP Weights: BTC=18.2%, ETH=11.4%, EUR/USD=8.7% | CVaR(95%)=2.14%`,
+                'Consensus: LONG EUR/USD (73.2%). ED25519 signature applied ✓',
+            ];
+            const a = agents[Math.floor(Math.random() * agents.length)];
+            addTerminalLine(a, msgs[Math.floor(Math.random() * msgs.length)]);
+        }
+    }, 1000);
+}
+
+// ── Market tick handler ───────────────────────────────────────────────────────
+let termMsgCount = 0;
+
+function handleMarketTick(data) {
+    ['BTCUSDT','ETHUSDT','EURUSD'].forEach(sym => {
+        if (!data[sym]) return;
+        const { price, change_pct } = data[sym];
+        const priceEl = document.getElementById(`price-${sym}`);
+        const chgEl   = document.getElementById(`chg-${sym}`);
+        const tickEl  = document.getElementById(`tick-${sym}`);
+        if (!priceEl) return;
+
+        const isUp  = change_pct >= 0;
+        const fmtP  = sym === 'EURUSD' ? price.toFixed(5) : '$' + price.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+        const fmtC  = (isUp ? '+' : '') + change_pct.toFixed(3) + '%';
+
+        priceEl.textContent = fmtP;
+        priceEl.className   = 'ticker-price ' + (isUp ? 'up' : 'down');
+        chgEl.textContent   = fmtC;
+        chgEl.className     = 'ticker-change ' + (isUp ? 'bg-up' : 'bg-down');
+
+        // Flash
+        tickEl.classList.add(isUp ? 'flash-up' : 'flash-down');
+        setTimeout(() => { tickEl.classList.remove('flash-up','flash-down'); }, 400);
+
+        // History
+        priceHistory[sym].push(price);
+        if (priceHistory[sym].length > MAX_HISTORY) priceHistory[sym].shift();
+
+        // Radar blip on large moves
+        if (Math.abs(change_pct) > 0.05) addRadarBlip(Math.min(Math.abs(change_pct) / 0.2, 1));
+
+        // Market velocity for starfield
+        marketVelocity = Math.max(-1, Math.min(1, change_pct / 0.5));
+    });
+
+    updateCharts();
+    updateBridgeTick(data.EURUSD?.price);
+    updateDirectionLabels(data);
+    updateAllocation();
+}
+
+function updateDirectionLabels(data) {
+    const labels = { BTCUSDT: 'btc-dir-label', ETHUSDT: 'eth-dir-label', EURUSD: 'eur-dir-label' };
+    Object.entries(labels).forEach(([sym, id]) => {
+        if (!data[sym]) return;
+        const dir  = data[sym].change_pct >= 0 ? '▲ LONG' : '▼ SHORT';
+        const col  = data[sym].change_pct >= 0 ? 'var(--green)' : 'var(--red)';
+        const el   = document.getElementById(id);
+        if (el) { el.textContent = `Direction: ${dir}`; el.style.color = col; }
+    });
+}
+
+// ── Portfolio allocation (simulated HRP) ──────────────────────────────────────
+let allocTick = 0;
+function updateAllocation() {
+    allocTick++;
+    if (allocTick % 10 !== 0) return;  // update every 10 seconds
+
+    const btcW = 15 + Math.random() * 8;
+    const ethW = 8  + Math.random() * 6;
+    const eurW = 6  + Math.random() * 5;
+
+    document.getElementById('alloc-btc').textContent = btcW.toFixed(1) + '%';
+    document.getElementById('alloc-eth').textContent = ethW.toFixed(1) + '%';
+    document.getElementById('alloc-eur').textContent = eurW.toFixed(1) + '%';
+    document.getElementById('bar-btc').style.width = btcW + '%';
+    document.getElementById('bar-eth').style.width = ethW + '%';
+    document.getElementById('bar-eur').style.width = eurW + '%';
+
+    // Risk metrics
+    const vol   = (12 + Math.random() * 6).toFixed(1) + '%';
+    const cvar  = (2.0 + Math.random()).toFixed(2) + '%';
+    const sharpe= (0.9 + Math.random() * 0.8).toFixed(2);
+
+    document.getElementById('port-vol').textContent  = vol;
+    document.getElementById('port-cvar').textContent = cvar;
+    document.getElementById('sharpe').textContent    = sharpe;
+}
+
+// ── Bridge tick ───────────────────────────────────────────────────────────────
+let bridgePct = 0;
+function updateBridgeTick(price) {
+    if (!price) return;
+    document.getElementById('bridge-tick').textContent = price.toFixed(5);
+    bridgePct = (bridgePct + 2.5) % 101;
+    document.getElementById('bridge-fill').style.width = bridgePct + '%';
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  Terminal
+// ══════════════════════════════════════════════════════════════════════════════
+
+const termBody = document.getElementById('terminal-body');
+
+function addTerminalLine(agent, msg) {
+    termMsgCount++;
+    const line = document.createElement('div');
+    line.className = 'term-line';
+
+    const agentSpan = document.createElement('span');
+    agentSpan.className = 'term-agent agent-' + agent;
+    agentSpan.textContent = agent.replace('_', ' ');
+
+    const msgSpan = document.createElement('span');
+    msgSpan.className = 'term-msg';
+    msgSpan.textContent = msg;
+
+    line.appendChild(agentSpan);
+    line.appendChild(msgSpan);
+    termBody.appendChild(line);
+
+    // Keep last 100 lines
+    while (termBody.children.length > 100) {
+        termBody.removeChild(termBody.firstChild);
+    }
+
+    termBody.scrollTop = termBody.scrollHeight;
+    document.getElementById('agent-count').textContent = termMsgCount + ' messages';
+}
+
+// Add cursor
+const cursorEl = document.createElement('span');
+cursorEl.className = 'cursor';
+termBody.appendChild(cursorEl);
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  Engine toggle
+// ══════════════════════════════════════════════════════════════════════════════
+
+let engineRunning = false;
+document.getElementById('engine-toggle').addEventListener('click', async function() {
+    const btn = this;
+    if (!engineRunning) {
+        btn.textContent = '⏹ STOP ENGINE';
+        btn.style.background = 'linear-gradient(135deg,var(--red),#c53030)';
+        btn.style.boxShadow = '0 0 16px rgba(239,68,68,0.4)';
+        engineRunning = true;
+        addTerminalLine('system', '⚡ Dual-market execution engine STARTED');
+        try { await fetch('http://localhost:8000/engine/start', {method:'POST'}); } catch {}
+    } else {
+        btn.textContent = '⚡ START ENGINE';
+        btn.style.background = '';
+        btn.style.boxShadow = '';
+        engineRunning = false;
+        addTerminalLine('system', '⏹ Engine STOPPED');
+        try { await fetch('http://localhost:8000/engine/stop', {method:'POST'}); } catch {}
+    }
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  Blockchain stats
+// ══════════════════════════════════════════════════════════════════════════════
+
+async function fetchChainStats() {
+    try {
+        const r = await fetch('http://localhost:5000/stats');
+        const d = await r.json();
+        document.getElementById('chain-blocks').textContent = d.block_count || '—';
+    } catch {
+        document.getElementById('chain-blocks').textContent = '—';
+    }
+}
+fetchChainStats();
+setInterval(fetchChainStats, 30000);
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  Boot: connect everything
+// ══════════════════════════════════════════════════════════════════════════════
+
+setTimeout(() => {
+    connectMarketWS();
+    connectAgentsWS();
+}, 2000);
+
+// Always start simulation for demo purposes
+setTimeout(startSimulation, 3500);
+</script>
 </body>
 </html>

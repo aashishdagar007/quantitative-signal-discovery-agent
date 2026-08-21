@@ -1,282 +1,570 @@
+"""
+AI Trading System — Dual-Market Execution Engine
+Event-driven, ultra-low-latency engine integrating:
+  • Binance Spot & Futures via WebSockets (aiohttp ws_connect)
+  • MetaTrader 5 Forex bridge (polling-based, Windows sidecar)
+  • PulseHyperHybrid EUR/USD bot
+  • Deterministic order routing with HMAC-signed Binance REST calls
+"""
+
+from __future__ import annotations
+
 import asyncio
+import hashlib
+import hmac
 import json
 import logging
-from typing import Dict, List, Optional, Any
+import os
+import time
+import urllib.parse
 from datetime import datetime
-import aiohttp
+from typing import Any, Callable, Dict, List, Optional
 
-from nautilus_trader.app import NautilusTrader
-from nautilus_trader.model.currencies import Currencies
-from nautilus_trader.model.enums import OrderSide, OrderType, OrderStatus
-from nautilus_trader.model.objects import Symbol, Instrument, InstrumentType
-from nautilus_trader.trading import SimTrading
+import aiohttp
+from dotenv import load_dotenv
+
+# Load environment
+for _p in ["infrastructure/.env", ".env", "../infrastructure/.env"]:
+    if os.path.exists(_p):
+        load_dotenv(_p)
+        break
 
 logger = logging.getLogger(__name__)
 
+BINANCE_WS_URL   = os.environ.get("BINANCE_WS_URL",   "wss://fstream.binance.com/ws")
+BINANCE_REST_URL = os.environ.get("BINANCE_REST_URL",  "https://fapi.binance.com")
+BINANCE_API_KEY  = os.environ.get("BINANCE_API_KEY",   "")
+BINANCE_SECRET   = os.environ.get("BINANCE_API_SECRET","")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Binance WebSocket Adapter
+# ══════════════════════════════════════════════════════════════════════════════
 
 class BinanceAdapter:
-    """Binance Spot & Futures WebSocket adapter for Nautilus Trader"""
-    
-    def __init__(self, base_url: str = "wss://fstream.binance.com/ws", 
-                 symbols: List[str] = None):
-        self.base_url = base_url
-        self.symbols = symbols or ["BTCUSDT", "ETHUSDT"]
-        self.callbacks = {}
-        self.session: Optional[aiohttp.ClientSession] = None
-    
-    async def start(self):
-        """Start WebSocket connections for all symbols"""
-        self.session = aiohttp.ClientSession()
-        tasks = []
-        for symbol in self.symbols:
-            task = asyncio.create_task(self._subscribe(symbol))
-            tasks.append(task)
-        await asyncio.gather(*tasks)
-    
-    async def _subscribe(self, symbol: str):
-        """Subscribe to kline and trade data for a symbol"""
-        stream = f"{symbol.lower()}@kline_1m"
-        url = f"{self.base_url}/{stream}"
-        async with self.session.get(url) as resp:
-            async for line in resp.content:
-                if line:
-                    data = json.loads(line)
-                    if data.get("k", {}).get("x"):  # kline closed
-                        kline = data["k"]
-                        ohlcv = {
-                            "timestamp": kline["t"],
-                            "open": float(kline["o"]),
-                            "high": float(kline["h"]),
-                            "low": float(kline["l"]),
-                            "close": float(kline["c"]),
-                            "volume": float(kline["v"])
-                        }
-                        self._emit("kline", symbol, ohlcv)
-    
-    def on(self, event: str, callback):
-        """Register callback for events"""
-        if event not in self.callbacks:
-            self.callbacks[event] = []
-        self.callbacks[event].append(callback)
-    
-    def _emit(self, event: str, *args):
-        """Emit event to registered callbacks"""
-        for cb in self.callbacks.get(event, []):
-            cb(*args)
+    """
+    Binance Spot & Futures WebSocket adapter.
+    Uses aiohttp.ClientSession.ws_connect() for true WebSocket connections.
+    """
 
+    def __init__(
+        self,
+        base_ws_url: str = BINANCE_WS_URL,
+        symbols: Optional[List[str]] = None,
+    ) -> None:
+        self.base_ws_url = base_ws_url
+        self.symbols     = symbols or ["BTCUSDT", "ETHUSDT"]
+        self._callbacks: Dict[str, List[Callable]] = {}
+        self._session: Optional[aiohttp.ClientSession] = None
+        self._running = False
+
+    async def start(self) -> None:
+        """Open WebSocket connections for all symbols concurrently."""
+        self._running = True
+        self._session = aiohttp.ClientSession()
+        tasks = [asyncio.create_task(self._subscribe(sym)) for sym in self.symbols]
+        await asyncio.gather(*tasks, return_exceptions=True)
+
+    async def stop(self) -> None:
+        self._running = False
+        if self._session:
+            await self._session.close()
+
+    async def _subscribe(self, symbol: str) -> None:
+        """Subscribe to 1-minute kline stream via proper WebSocket handshake."""
+        stream_name = f"{symbol.lower()}@kline_1m"
+        url = f"{self.base_ws_url}/{stream_name}"
+
+        reconnect_delay = 1.0
+        while self._running:
+            try:
+                async with self._session.ws_connect(url, heartbeat=20.0) as ws:
+                    logger.info("[Binance WS] Connected: %s", stream_name)
+                    reconnect_delay = 1.0  # reset on successful connection
+                    async for msg in ws:
+                        if not self._running:
+                            break
+                        if msg.type == aiohttp.WSMsgType.TEXT:
+                            await self._handle_message(symbol, msg.data)
+                        elif msg.type in (aiohttp.WSMsgType.CLOSED, aiohttp.WSMsgType.ERROR):
+                            logger.warning("[Binance WS] %s disconnected, reconnecting…", symbol)
+                            break
+            except Exception as exc:
+                logger.error("[Binance WS] %s error: %s", symbol, exc)
+
+            if self._running:
+                await asyncio.sleep(reconnect_delay)
+                reconnect_delay = min(reconnect_delay * 2, 30.0)  # exponential backoff
+
+    async def _handle_message(self, symbol: str, raw: str) -> None:
+        try:
+            data = json.loads(raw)
+            if "k" not in data:
+                return
+            kline = data["k"]
+            ohlcv = {
+                "timestamp": kline["t"],
+                "open":      float(kline["o"]),
+                "high":      float(kline["h"]),
+                "low":       float(kline["l"]),
+                "close":     float(kline["c"]),
+                "volume":    float(kline["v"]),
+                "closed":    kline["x"],
+            }
+            await self._emit("kline", symbol, ohlcv)
+            if kline["x"]:  # candle closed
+                await self._emit("kline_closed", symbol, ohlcv)
+        except (json.JSONDecodeError, KeyError) as exc:
+            logger.debug("[Binance WS] Parse error: %s", exc)
+
+    def on(self, event: str, callback: Callable) -> None:
+        self._callbacks.setdefault(event, []).append(callback)
+
+    async def _emit(self, event: str, *args: Any) -> None:
+        for cb in self._callbacks.get(event, []):
+            try:
+                if asyncio.iscoroutinefunction(cb):
+                    await cb(*args)
+                else:
+                    cb(*args)
+            except Exception as exc:
+                logger.error("[Binance WS] Callback error: %s", exc)
+
+    # ── REST order execution with HMAC-SHA256 signing ─────────────────────────
+
+    async def place_order(
+        self,
+        symbol: str,
+        side: str,
+        quantity: float,
+        order_type: str = "MARKET",
+        price: Optional[float] = None,
+    ) -> Dict[str, Any]:
+        """Place a signed order via Binance REST API."""
+        if not BINANCE_API_KEY or not BINANCE_SECRET:
+            logger.warning("[Binance] No API credentials — order skipped (paper mode)")
+            return {"status": "PAPER", "symbol": symbol, "side": side, "qty": quantity}
+
+        endpoint = f"{BINANCE_REST_URL}/fapi/v1/order"
+        params: Dict[str, Any] = {
+            "symbol":    symbol,
+            "side":      side.upper(),
+            "type":      order_type,
+            "quantity":  quantity,
+            "timestamp": int(time.time() * 1000),
+        }
+        if order_type == "LIMIT" and price:
+            params["price"]      = price
+            params["timeInForce"] = "GTC"
+
+        # HMAC-SHA256 signature
+        query_string = urllib.parse.urlencode(params)
+        signature = hmac.new(
+            BINANCE_SECRET.encode("utf-8"),
+            query_string.encode("utf-8"),
+            hashlib.sha256,
+        ).hexdigest()
+        params["signature"] = signature
+
+        headers = {"X-MBX-APIKEY": BINANCE_API_KEY}
+        async with self._session.post(endpoint, params=params, headers=headers) as resp:
+            return await resp.json()
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  MetaTrader 5 Forex Bridge (Windows sidecar / polling-based)
+# ══════════════════════════════════════════════════════════════════════════════
 
 class ForexMT5Bridge:
-    """MetaTrader 5/FIX Bridge for EUR/USD and other forex pairs"""
-    
-    def __init__(self, mt5_path: str, login: int, password: str):
-        self.mt5_path = mt5_path
-        self.login = login
-        self.password = password
+    """
+    MetaTrader 5 bridge for EUR/USD and other forex pairs.
+    Uses mt5.copy_ticks_from() polling loop (no unsupported callback API).
+    Only functional on Windows with MetaTrader5 package installed.
+    """
+
+    def __init__(
+        self,
+        mt5_path: str = "",
+        login: int = 0,
+        password: str = "",
+        server: str = "",
+        symbols: Optional[List[str]] = None,
+    ) -> None:
+        self.mt5_path  = mt5_path or os.environ.get("MT5_PATH", "")
+        self.login     = login    or int(os.environ.get("MT5_LOGIN", 0) or 0)
+        self.password  = password or os.environ.get("MT5_PASSWORD", "")
+        self.server    = server   or os.environ.get("MT5_SERVER",   "")
+        self.symbols   = symbols  or os.environ.get("MT5_SYMBOLS", "EURUSD").split(",")
         self.connected = False
-        self.tick_callbacks = []
-    
-    def connect(self):
-        """Connect to MetaTrader 5 terminal"""
-        import mt5
-        if not mt5.initialize(path=self.mt5_path):
-            logger.error("MT5 initialize failed")
+        self._callbacks: Dict[str, List[Callable]] = {}
+        self._mt5_available = False
+        self._running  = False
+
+    def connect(self) -> bool:
+        """Connect to MetaTrader 5 terminal (Windows only)."""
+        try:
+            import MetaTrader5 as mt5
+            self._mt5 = mt5
+        except ImportError:
+            logger.warning("[MT5] MetaTrader5 package not available. Forex bridge in simulation mode.")
+            self._mt5_available = False
             return False
-        if not mt5.login(self.login, self.password):
-            logger.error("MT5 login failed")
+
+        kwargs: Dict[str, Any] = {}
+        if self.mt5_path:
+            kwargs["path"] = self.mt5_path
+        if not self._mt5.initialize(**kwargs):
+            logger.error("[MT5] Initialize failed: %s", self._mt5.last_error())
             return False
+
+        if self.login:
+            if not self._mt5.login(self.login, self.password, self.server):
+                logger.error("[MT5] Login failed: %s", self._mt5.last_error())
+                return False
+
+        for sym in self.symbols:
+            self._mt5.symbol_select(sym, True)
+
         self.connected = True
-        logger.info("MT5 connected successfully")
-        
-        # Subscribe to tick data for EURUSD
-        symbol = mt5.symbols_get("EURUSD")[0]
-        mt5.symbol_select(symbol.name, True)
-        
-        # Set up tick handler
-        mt5.set_tick_callback(self._on_tick)
+        self._mt5_available = True
+        logger.info("[MT5] Connected successfully. Symbols: %s", self.symbols)
         return True
-    
-    def _on_tick(self, symbol, tick):
-        """Handle incoming tick data from MT5"""
-        tick_data = {
-            "bid": tick.bid,
-            "ask": tick.ask,
-            "last": tick.last,
-            "timestamp": tick.time
-        }
-        self._emit("tick", "EURUSD", tick_data)
-    
-    def on(self, event: str, callback):
-        """Register callback for events"""
-        if event not in self.tick_callbacks:
-            self.tick_callbacks.append(callback)
-    
-    def _emit(self, event: str, *args):
-        """Emit event to registered callbacks"""
-        for cb in self.tick_callbacks:
-            cb(*args)
 
+    async def start_polling(self, interval_ms: float = 100.0) -> None:
+        """Poll MT5 tick data in an async loop (non-blocking via asyncio.sleep)."""
+        self._running = True
+        import datetime as _dt
 
-class DualMarketEngine:
-    """Event-driven core engine synchronizing crypto and forex data streams"""
-    
-    def __init__(self):
-        self.binance_adapter = None
-        self.forex_bridge = None
-        self.event_loop = asyncio.get_event_loop()
-        self.positions: Dict[str, Dict] = {}
-        self.active_orders: Dict[str, Dict] = {}
-        self.running = False
-    
-    def initialize(self, binance_symbols: List[str] = None,
-                   mt5_config: Dict = None):
-        """Initialize both market adapters"""
-        self.binance_adapter = BinanceAdapter(symbols=binance_symbols or ["BTCUSDT", "ETHUSDT"])
-        self.binance_adapter.on("kline", self._handle_binance_kline)
-        
-        mt5_config = mt5_config or {}
-        self.forex_bridge = ForexMT5Bridge(
-            mt5_path=mt5_config.get("path", "C:\\Program Files\\MetaTrader 5\\terminal64.exe"),
-            login=mt5_config.get("login", 0),
-            password=mt5_config.get("password", "")
-        )
-        self.forex_bridge.on("tick", self._handle_forex_tick)
-    
-    async def start(self):
-        """Start both market data streams"""
-        self.running = True
-        await self.binance_adapter.start()
-        self.forex_bridge.connect()
-    
-    def _handle_binance_kline(self, symbol: str, ohlcv: Dict):
-        """Process Binance kline data"""
-        logger.info(f"Binance kline {symbol}: {ohlcv['close']:.2f}")
-        # Sync data for Kronos forecasting
-        if symbol not in self.positions:
-            self.positions[symbol] = {"ohlcv": []}
-        self.positions[symbol]["ohlcv"].append(ohlcv)
-        # Keep only last 100 entries
-        if len(self.positions[symbol]["ohlcv"]) > 100:
-            self.positions[symbol]["ohlcv"] = self.positions[symbol]["ohlcv"][-100:]
-    
-    def _handle_forex_tick(self, symbol: str, tick_data: Dict):
-        """Process Forex tick data from MT5"""
-        logger.info(f"Forex tick {symbol}: bid={tick_data['bid']:.5f}")
-        # Sync data for Kronos forecasting
-        if symbol not in self.positions:
-            self.positions[symbol] = {"ticks": []}
-        self.positions[symbol]["ticks"].append(tick_data)
-        if len(self.positions[symbol]["ticks"]) > 100:
-            self.positions[symbol]["ticks"] = self.positions[symbol]["ticks"][-100:]
-    
-    async def execute_order(self, symbol: str, side: str, 
-                          quantity: float, order_type: str = "market"):
-        """Execute order across supported markets"""
-        order_id = f"order_{datetime.utcnow().timestamp()}"
-        order = {
-            "id": order_id,
-            "symbol": symbol,
-            "side": side,
-            "quantity": quantity,
-            "type": order_type,
-            "status": "pending",
-            "timestamp": datetime.utcnow().isoformat()
-        }
-        self.active_orders[order_id] = order
-        
-        # Determine market and execute
-        if symbol in ["BTCUSDT", "ETHUSDT"]:
-            await self._execute_binance_order(order)
-        else:
-            self._execute_mt5_order(order)
-        
-        return order
-    
-    async def _execute_binance_order(self, order: Dict):
-        """Execute order via Binance API"""
-        logger.info(f"Executing Binance order: {order['side']} {order['quantity']} {order['symbol']}")
-        # In production, would call Binance API
-        order["status"] = "filled"
-        order["execution_price"] = order["quantity"] * 0.5  # placeholder
-    
-    def _execute_mt5_order(self, order: Dict):
-        """Execute order via MetaTrader 5"""
-        import mt5
+        last_ticks: Dict[str, Any] = {}
+
+        while self._running:
+            if self._mt5_available and self.connected:
+                for sym in self.symbols:
+                    try:
+                        ticks = self._mt5.copy_ticks_from(
+                            sym,
+                            _dt.datetime.utcnow() - _dt.timedelta(seconds=1),
+                            10,
+                            self._mt5.COPY_TICKS_ALL,
+                        )
+                        if ticks is not None and len(ticks) > 0:
+                            latest = ticks[-1]
+                            tick_data = {
+                                "bid":       float(latest.bid),
+                                "ask":       float(latest.ask),
+                                "last":      float(latest.last),
+                                "timestamp": int(latest.time),
+                            }
+                            if last_ticks.get(sym) != tick_data.get("bid"):
+                                last_ticks[sym] = tick_data["bid"]
+                                await self._emit("tick", sym, tick_data)
+                    except Exception as exc:
+                        logger.debug("[MT5] Poll error for %s: %s", sym, exc)
+            else:
+                # Simulation mode: generate synthetic tick
+                import random
+                for sym in self.symbols:
+                    base = {"EURUSD": 1.0845, "GBPUSD": 1.2650, "USDJPY": 149.50}.get(sym, 1.0)
+                    spread = 0.00020
+                    bid = base + random.gauss(0, 0.0002)
+                    tick_data = {
+                        "bid":       round(bid, 5),
+                        "ask":       round(bid + spread, 5),
+                        "last":      round(bid, 5),
+                        "timestamp": int(time.time()),
+                    }
+                    await self._emit("tick", sym, tick_data)
+
+            await asyncio.sleep(interval_ms / 1000.0)
+
+    def stop(self) -> None:
+        self._running = False
+        if self._mt5_available and self.connected:
+            self._mt5.shutdown()
+            self.connected = False
+
+    def on(self, event: str, callback: Callable) -> None:
+        self._callbacks.setdefault(event, []).append(callback)
+
+    async def _emit(self, event: str, *args: Any) -> None:
+        for cb in self._callbacks.get(event, []):
+            try:
+                if asyncio.iscoroutinefunction(cb):
+                    await cb(*args)
+                else:
+                    cb(*args)
+            except Exception as exc:
+                logger.error("[MT5] Callback error: %s", exc)
+
+    def place_order(
+        self,
+        symbol: str,
+        side: str,
+        volume: float,
+        price: float = 0.0,
+        comment: str = "PulseHyperHybrid",
+    ) -> Dict[str, Any]:
+        """Place a market order via MT5."""
+        if not self._mt5_available or not self.connected:
+            logger.warning("[MT5] Not connected — order skipped (paper mode)")
+            return {"retcode": -1, "status": "PAPER", "symbol": symbol, "side": side, "volume": volume}
+
+        mt5 = self._mt5
         side_map = {"buy": mt5.ORDER_TYPE_BUY, "sell": mt5.ORDER_TYPE_SELL}
-        order_type = mt5.ORDER_TYPE_MARKET
-        
+        tick = mt5.symbol_info_tick(symbol)
+
         request = {
-            "action": mt5.TRADE_ACTION_DEAL,
-            "symbol": order["symbol"],
-            "volume": order["quantity"],
-            "price": 0,
-            "type": order_type,
-            "side": side_map.get("buy", mt5.ORDER_TYPE_BUY),
-            "deviation": 20,
-            "magic": 0,
-            "comment": "Nautilus execution",
-            "type_time": mt5.ORDER_TIME_GTC,
+            "action":       mt5.TRADE_ACTION_DEAL,
+            "symbol":       symbol,
+            "volume":       volume,
+            "type":         side_map.get(side.lower(), mt5.ORDER_TYPE_BUY),
+            "price":        tick.ask if side.lower() == "buy" else tick.bid,
+            "deviation":    20,
+            "magic":        202600,
+            "comment":      comment,
+            "type_time":    mt5.ORDER_TIME_GTC,
             "type_filling": mt5.ORDER_FILLING_FOK,
         }
-        
+
         result = mt5.order_send(request)
         if result.retcode != mt5.TRADE_RETCODE_DONE:
-            logger.error(f"MT5 order failed: {result.retcode}")
+            logger.error("[MT5] Order failed: retcode=%d", result.retcode)
         else:
-            order["status"] = "filled"
-            order["execution_price"] = result.price
+            logger.info("[MT5] Order filled: %s %s %.2f @ %.5f", side, symbol, volume, result.price)
+
+        return {
+            "retcode":       result.retcode,
+            "order_id":      result.order,
+            "price":         result.price,
+            "volume":        result.volume,
+            "symbol":        symbol,
+            "side":          side,
+        }
 
 
-# PulseHyperHybrid bot targeting EUR/USD
+# ══════════════════════════════════════════════════════════════════════════════
+#  Dual-Market Event-Driven Engine
+# ══════════════════════════════════════════════════════════════════════════════
+
+class DualMarketEngine:
+    """
+    Core event loop synchronizing crypto OHLCV and forex tick streams
+    without blocking. Provides a unified execute_order() interface.
+    """
+
+    def __init__(self) -> None:
+        self.binance: Optional[BinanceAdapter] = None
+        self.forex:   Optional[ForexMT5Bridge] = None
+        self._data: Dict[str, Dict] = {}
+        self._order_log: List[Dict] = []
+        self._running = False
+        self._on_data_callbacks: List[Callable] = []
+
+    def initialize(
+        self,
+        binance_symbols: Optional[List[str]] = None,
+        mt5_config: Optional[Dict] = None,
+    ) -> None:
+        cfg = mt5_config or {}
+        self.binance = BinanceAdapter(symbols=binance_symbols or ["BTCUSDT", "ETHUSDT"])
+        self.binance.on("kline_closed", self._on_binance_kline)
+
+        self.forex = ForexMT5Bridge(
+            mt5_path =cfg.get("path",     ""),
+            login    =cfg.get("login",    0),
+            password =cfg.get("password", ""),
+            server   =cfg.get("server",   ""),
+            symbols  =cfg.get("symbols",  ["EURUSD"]),
+        )
+        self.forex.on("tick", self._on_forex_tick)
+
+    async def start(self) -> None:
+        """Start both market data streams concurrently."""
+        self._running = True
+        self.forex.connect()
+        await asyncio.gather(
+            self.binance.start(),
+            self.forex.start_polling(interval_ms=200),
+            return_exceptions=True,
+        )
+
+    def stop(self) -> None:
+        self._running = False
+        if self.forex:
+            self.forex.stop()
+
+    def on_data(self, callback: Callable) -> None:
+        """Register a callback triggered on every incoming market event."""
+        self._on_data_callbacks.append(callback)
+
+    async def _on_binance_kline(self, symbol: str, ohlcv: Dict) -> None:
+        self._data.setdefault(symbol, {"ohlcv": [], "type": "crypto"})
+        buf = self._data[symbol]["ohlcv"]
+        buf.append(ohlcv)
+        if len(buf) > 500:
+            buf[:] = buf[-500:]
+        logger.debug("[Engine] Binance kline %s close=%.2f", symbol, ohlcv["close"])
+        for cb in self._on_data_callbacks:
+            if asyncio.iscoroutinefunction(cb):
+                await cb({"market": "crypto", "symbol": symbol, "data": ohlcv})
+            else:
+                cb({"market": "crypto", "symbol": symbol, "data": ohlcv})
+
+    async def _on_forex_tick(self, symbol: str, tick: Dict) -> None:
+        self._data.setdefault(symbol, {"ticks": [], "type": "forex"})
+        buf = self._data[symbol]["ticks"]
+        buf.append(tick)
+        if len(buf) > 5000:
+            buf[:] = buf[-5000:]
+        logger.debug("[Engine] MT5 tick %s bid=%.5f", symbol, tick["bid"])
+        for cb in self._on_data_callbacks:
+            if asyncio.iscoroutinefunction(cb):
+                await cb({"market": "forex", "symbol": symbol, "data": tick})
+            else:
+                cb({"market": "forex", "symbol": symbol, "data": tick})
+
+    async def execute_order(
+        self,
+        symbol: str,
+        side: str,
+        quantity: float,
+        order_type: str = "market",
+    ) -> Dict[str, Any]:
+        """Route and execute an order on the appropriate market."""
+        order_id = f"ord_{int(time.time()*1000)}_{symbol}"
+        order: Dict[str, Any] = {
+            "id":        order_id,
+            "symbol":    symbol,
+            "side":      side,
+            "quantity":  quantity,
+            "type":      order_type,
+            "status":    "pending",
+            "timestamp": datetime.utcnow().isoformat(),
+        }
+
+        # Determine routing
+        crypto_symbols = {"BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT", "XRPUSDT"}
+        if symbol in crypto_symbols:
+            result = await self.binance.place_order(symbol, side, quantity, order_type.upper())
+            order.update({"exchange": "binance", "status": result.get("status", "UNKNOWN"), **result})
+        else:
+            result = self.forex.place_order(symbol, side, quantity)
+            order.update({"exchange": "mt5", "status": "filled" if result.get("retcode") == 0 else "error", **result})
+
+        self._order_log.append(order)
+        logger.info("[Engine] Order %s: %s %s %.4f → %s", order_id, side, symbol, quantity, order.get("status"))
+        return order
+
+    def get_prices(self, symbol: str) -> List[float]:
+        """Return recent close prices for a symbol."""
+        sym_data = self._data.get(symbol, {})
+        if "ohlcv" in sym_data:
+            return [c["close"] for c in sym_data["ohlcv"]]
+        elif "ticks" in sym_data:
+            return [t["bid"] for t in sym_data["ticks"]]
+        return []
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  PulseHyperHybrid — EUR/USD Scalping Bot
+# ══════════════════════════════════════════════════════════════════════════════
+
 class PulseHyperHybrid:
-    """Scalping bot for EUR/USD pair using dual-market signals"""
-    
-    def __init__(self, engine: DualMarketEngine):
-        self.engine = engine
-        self.position = 0
-        self.signal_threshold = 0.001
-    
-    async def run(self):
-        """Main bot loop"""
-        while True:
-            # Wait for synchronized signals
-            await asyncio.sleep(0.1)
-            
-            # Check for EURUSD tick data
-            if "EURUSD" in self.engine.positions:
-                ticks = self.engine.positions["EURUSD"].get("ticks", [])
-                if ticks:
-                    latest = ticks[-1]
-                    # Simple signal logic
-                    price_change = latest["bid"] - latest.get("prev_bid", latest["bid"])
-                    
-                    if abs(price_change) > self.signal_threshold:
-                        side = "buy" if price_change > 0 else "sell"
-                        await self.engine.execute_order(
-                            symbol="EURUSD",
-                            side=side,
-                            quantity=0.01
-                        )
-                        latest["prev_bid"] = latest["bid"]
+    """
+    Configurable EUR/USD scalping bot using dual-market signals.
+    Targets the EUR/USD pair. Integrates with AI Desk consensus.
+    """
 
+    def __init__(
+        self,
+        engine: DualMarketEngine,
+        symbol: str = "EURUSD",
+        signal_threshold: float = 0.0003,   # 3 pips
+        volume: float = 0.01,
+        ema_period: int = 14,
+    ) -> None:
+        self.engine           = engine
+        self.symbol           = symbol
+        self.signal_threshold = signal_threshold
+        self.volume           = volume
+        self.ema_period       = ema_period
+        self._position        = 0       # 1 = long, -1 = short, 0 = flat
+        self._ema: Optional[float] = None
+        self._tick_count = 0
+
+    def _update_ema(self, price: float) -> float:
+        k = 2.0 / (self.ema_period + 1)
+        if self._ema is None:
+            self._ema = price
+        else:
+            self._ema = k * price + (1 - k) * self._ema
+        return self._ema
+
+    async def on_tick(self, symbol: str, tick: Dict) -> None:
+        """Called on each MT5 tick for EUR/USD."""
+        if symbol != self.symbol:
+            return
+
+        self._tick_count += 1
+        bid = tick["bid"]
+        ask = tick["ask"]
+        mid = (bid + ask) / 2.0
+
+        ema = self._update_ema(mid)
+
+        # Signal: price crosses EMA by more than threshold
+        diff = mid - ema
+        if abs(diff) < self.signal_threshold:
+            return
+
+        desired_position = 1 if diff > 0 else -1
+
+        # Only trade on position change
+        if desired_position == self._position:
+            return
+
+        # Close existing
+        if self._position != 0:
+            close_side = "sell" if self._position == 1 else "buy"
+            await self.engine.execute_order(self.symbol, close_side, self.volume)
+
+        # Open new
+        open_side = "buy" if desired_position == 1 else "sell"
+        await self.engine.execute_order(self.symbol, open_side, self.volume)
+        self._position = desired_position
+        logger.info(
+            "[PulseHyperHybrid] %s %s @ bid=%.5f ema=%.5f diff=%.5f",
+            open_side, self.symbol, bid, ema, diff,
+        )
+
+    async def run(self) -> None:
+        """Register the tick handler and let the engine drive us."""
+        self.engine.forex.on("tick", self.on_tick)
+        logger.info("[PulseHyperHybrid] Bot active on %s (threshold=%.5f)", self.symbol, self.signal_threshold)
+        while True:
+            await asyncio.sleep(60)   # heartbeat; actual work is event-driven
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Entry point
+# ══════════════════════════════════════════════════════════════════════════════
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
-    
+
     engine = DualMarketEngine()
-    
-    # Initialize with EURUSD and major crypto pairs
     engine.initialize(
         binance_symbols=["BTCUSDT", "ETHUSDT"],
-        mt5_config={"login": 12345678, "password": "demo"}
+        mt5_config={"symbols": ["EURUSD"]},
     )
-    
-    # Start market data streams
-    asyncio.get_event_loop().create_task(engine.start())
-    
-    # Start PulseHyperHybrid bot
-    bot = PulseHyperHybrid(engine)
-    asyncio.get_event_loop().create_task(bot.run())
-    
-    print("Dual-market execution engine started")
-    import signal
-    signal.pause()
+
+    bot = PulseHyperHybrid(engine, symbol="EURUSD")
+
+    async def _main():
+        await asyncio.gather(engine.start(), bot.run())
+
+    try:
+        asyncio.run(_main())
+    except KeyboardInterrupt:
+        engine.stop()
+        print("[Engine] Shutdown complete.")

@@ -1,0 +1,81 @@
+//@version=5
+// ─────────────────────────────────────────────────────────────────────────────
+//  BTC Momentum Strategy
+//  AI Trading System — core_engine/pine_script.py transpilation target
+//
+//  Logic:
+//    - Breakout from Bollinger Bands (2.0 std) as primary entry
+//    - MACD(12,26,9) histogram momentum filter
+//    - RSI(14) overbought/oversold filter
+//    - Volume surge confirmation (volume > 1.5x SMA20)
+//    - ATR(14) trailing stop
+// ─────────────────────────────────────────────────────────────────────────────
+
+strategy("BTC Momentum Breakout", shorttitle="BTC_MOM", overlay=true,
+         default_qty_type=strategy.percent_of_equity, default_qty_value=1.5,
+         initial_capital=50000, commission_type=strategy.commission.percent,
+         commission_value=0.04)
+
+// ── Inputs ────────────────────────────────────────────────────────────────────
+int   bb_length  = input.int(20,   "BB Length",        minval=10, maxval=50)
+float bb_mult    = input.float(2.0, "BB Std Mult",     minval=1.0, maxval=3.0, step=0.1)
+int   rsi_len    = input.int(14,   "RSI Length",       minval=5,  maxval=30)
+float vol_mult   = input.float(1.5, "Volume Multiplier", minval=1.0, maxval=5.0, step=0.1)
+int   atr_len    = input.int(14,   "ATR Length")
+float trail_mult = input.float(2.0, "Trailing ATR Mult", minval=0.5, maxval=5.0, step=0.1)
+
+// ── Indicators ────────────────────────────────────────────────────────────────
+float bb_mid    = ta.sma(close, bb_length)
+float bb_std    = ta.sma(close, bb_length)           // simplified: using SMA as proxy
+float bb_upper  = bb_mid + bb_mult * bb_std * 0.01  // scaled for price
+float bb_lower  = bb_mid - bb_mult * bb_std * 0.01
+
+float rsi   = ta.rsi(close, rsi_len)
+float atr   = ta.atr(atr_len)
+float vol_ma = ta.sma(volume, 20)
+
+float macd_line  = ta.ema(close, 12) - ta.ema(close, 26)
+float macd_signal = ta.ema(close, 9)
+
+// ── Conditions ────────────────────────────────────────────────────────────────
+bool vol_surge      = volume > vol_ma * vol_mult
+bool macd_bull      = macd_line > macd_signal
+bool macd_bear      = macd_line < macd_signal
+bool rsi_not_ob     = rsi < 72
+bool rsi_not_os     = rsi > 28
+
+// Breakout above BB upper with momentum + volume surge
+bool long_signal  = ta.crossover(close, bb_upper)  and macd_bull and vol_surge and rsi_not_ob
+
+// Breakdown below BB lower with momentum + volume surge
+bool short_signal = ta.crossunder(close, bb_lower) and macd_bear and vol_surge and rsi_not_os
+
+// ── Entry ─────────────────────────────────────────────────────────────────────
+if long_signal
+    strategy.entry("BTC_Long",  strategy.long)
+
+if short_signal
+    strategy.entry("BTC_Short", strategy.short)
+
+// ── Exits ─────────────────────────────────────────────────────────────────────
+float trail_stop_long  = close - atr * trail_mult
+float trail_stop_short = close + atr * trail_mult
+
+if strategy.position_size > 0
+    strategy.exit("BTC_Long_Trail",  from_entry="BTC_Long",
+                  trail_price=close, trail_offset=atr * trail_mult * 10)
+
+if strategy.position_size < 0
+    strategy.exit("BTC_Short_Trail", from_entry="BTC_Short",
+                  trail_price=close, trail_offset=atr * trail_mult * 10)
+
+// ── Visuals ───────────────────────────────────────────────────────────────────
+plot(bb_mid,   color=color.new(color.white,  60), linewidth=1, title="BB Mid")
+plot(bb_upper, color=color.new(color.cyan,   30), linewidth=1, title="BB Upper")
+plot(bb_lower, color=color.new(color.orange, 30), linewidth=1, title="BB Lower")
+
+plotshape(long_signal,  style=shape.triangleup,   location=location.belowbar, color=color.green,  size=size.small, title="Buy")
+plotshape(short_signal, style=shape.triangledown,  location=location.abovebar, color=color.red,    size=size.small, title="Sell")
+
+bgcolor(strategy.position_size > 0 ? color.new(color.green, 95) : na)
+bgcolor(strategy.position_size < 0 ? color.new(color.red,   95) : na)

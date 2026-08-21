@@ -1,0 +1,50 @@
+# ==============================================================
+#  AI Trading System — Backend Dockerfile
+#  Python 3.11 slim, uv for fast dependency installation
+# ==============================================================
+
+FROM python:3.11-slim AS base
+
+# System dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    curl \
+    libpq-dev \
+    gcc \
+    g++ \
+    cmake \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install uv for fast package management
+RUN pip install --no-cache-dir uv
+
+WORKDIR /app
+
+# Copy dependency files first for layer caching
+COPY pyproject.toml ./
+COPY uv.lock ./
+
+# Install Python dependencies via uv
+RUN uv sync --no-dev --frozen
+
+# Copy entire application source
+COPY backend/ ./backend/
+COPY core_engine/ ./core_engine/
+COPY blockchain_audit/ ./blockchain_audit/
+COPY security/ ./security/
+COPY strategies/ ./strategies/
+
+# Create necessary directories
+RUN mkdir -p /app/models /app/data /app/logs
+
+# Compile C++ security profiler if available
+RUN if [ -f security/CMakeLists.txt ]; then \
+        cd security && cmake -B build -DCMAKE_BUILD_TYPE=Release && \
+        cmake --build build --parallel 4 || echo "C++ build skipped (non-fatal)"; \
+    fi
+
+# Expose FastAPI port
+EXPOSE 8000
+
+# Default: run FastAPI backend
+CMD ["uv", "run", "uvicorn", "backend.app:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2"]

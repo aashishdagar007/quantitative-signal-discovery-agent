@@ -1,0 +1,67 @@
+//@version=5
+// ─────────────────────────────────────────────────────────────────────────────
+//  PulseHyperHybrid — EUR/USD Scalping Strategy
+//  AI Trading System — core_engine/pine_script.py transpilation target
+//
+//  Logic:
+//    - Dual EMA (fast=8, slow=21) crossover entry signal
+//    - RSI(14) filter: only long if RSI < 65, only short if RSI > 35
+//    - ATR(14) dynamic stop-loss and take-profit
+//    - Signals transmitted to PulseHyperHybrid bot via strategy.entry()
+// ─────────────────────────────────────────────────────────────────────────────
+
+strategy("PulseHyperHybrid EUR/USD", shorttitle="PHH", overlay=true,
+         default_qty_type=strategy.percent_of_equity, default_qty_value=2,
+         initial_capital=10000, commission_type=strategy.commission.percent,
+         commission_value=0.002)
+
+// ── Inputs ────────────────────────────────────────────────────────────────────
+int   ema_fast   = input.int(8,  "Fast EMA",   minval=3,  maxval=50)
+int   ema_slow   = input.int(21, "Slow EMA",   minval=10, maxval=100)
+int   rsi_period = input.int(14, "RSI Period", minval=5,  maxval=30)
+int   atr_period = input.int(14, "ATR Period", minval=5,  maxval=30)
+float sl_mult    = input.float(1.5, "SL ATR Mult",  minval=0.5, maxval=5.0, step=0.1)
+float tp_mult    = input.float(2.5, "TP ATR Mult",  minval=1.0, maxval=8.0, step=0.1)
+bool  use_rsi    = input.bool(true, "RSI Filter")
+
+// ── Indicators ────────────────────────────────────────────────────────────────
+float ema_f = ta.ema(close, ema_fast)
+float ema_s = ta.ema(close, ema_slow)
+float rsi   = ta.rsi(close, rsi_period)
+float atr   = ta.atr(atr_period)
+
+// ── Signal conditions ─────────────────────────────────────────────────────────
+bool long_cross  = ta.crossover(ema_f, ema_s)
+bool short_cross = ta.crossunder(ema_f, ema_s)
+
+bool rsi_long_ok  = use_rsi ? rsi < 65 : true
+bool rsi_short_ok = use_rsi ? rsi > 35 : true
+
+bool long_signal  = long_cross  and rsi_long_ok
+bool short_signal = short_cross and rsi_short_ok
+
+// ── Entry ─────────────────────────────────────────────────────────────────────
+if long_signal
+    strategy.entry("PHH_Long",  strategy.long)
+
+if short_signal
+    strategy.entry("PHH_Short", strategy.short)
+
+// ── Exit — ATR-based SL/TP ────────────────────────────────────────────────────
+float long_sl  = strategy.position_avg_price - atr * sl_mult
+float long_tp  = strategy.position_avg_price + atr * tp_mult
+float short_sl = strategy.position_avg_price + atr * sl_mult
+float short_tp = strategy.position_avg_price - atr * tp_mult
+
+if strategy.position_size > 0
+    strategy.exit("PHH_Long_Exit",  from_entry="PHH_Long",  stop=long_sl,  limit=long_tp)
+
+if strategy.position_size < 0
+    strategy.exit("PHH_Short_Exit", from_entry="PHH_Short", stop=short_sl, limit=short_tp)
+
+// ── Visuals ───────────────────────────────────────────────────────────────────
+plot(ema_f, color=color.new(color.cyan,   0), linewidth=1, title="EMA Fast")
+plot(ema_s, color=color.new(color.purple, 0), linewidth=1, title="EMA Slow")
+
+plotshape(long_signal,  title="Long",  style=shape.triangleup,   location=location.belowbar, color=color.green, size=size.small)
+plotshape(short_signal, title="Short", style=shape.triangledown,  location=location.abovebar, color=color.red,   size=size.small)

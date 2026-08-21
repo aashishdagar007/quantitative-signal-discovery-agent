@@ -24,13 +24,15 @@ for env_path in ["infrastructure/.env", ".env", "../infrastructure/.env"]:
         load_dotenv(env_path)
         break
 
-import database
-from database import (
+from backend.database import (
+    AuditLog,
+    Signal,
     User,
     authenticate_user,
     create_db_and_tables,
     get_db,
     get_user_by_username,
+    hash_password,
     seed_team_members,
 )
 
@@ -264,11 +266,10 @@ async def create_user(
     db: Session = Depends(get_db),
     _: User = Depends(require_role("admin")),
 ):
-    from database import hash_password, User as UserModel
     existing = get_user_by_username(db, payload.username)
     if existing:
         raise HTTPException(status_code=400, detail="Username already registered")
-    user = UserModel(
+    user = User(
         username=payload.username,
         email=payload.email,
         hashed_password=hash_password(payload.password),
@@ -315,7 +316,6 @@ async def latest_signals(
     db: Session = Depends(get_db),
     _: User = Depends(get_current_active_user),
 ):
-    from database import Signal
     signals = db.query(Signal).order_by(Signal.created_at.desc()).limit(20).all()
     return [
         {
@@ -358,7 +358,6 @@ async def get_audit_log(
     db: Session = Depends(get_db),
     _: User = Depends(get_current_active_user),
 ):
-    from database import AuditLog
     import json as _json
     offset = (page - 1) * limit
     entries = (

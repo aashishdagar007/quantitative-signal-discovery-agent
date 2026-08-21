@@ -21,19 +21,27 @@ requires = ["setuptools >= 64", "setuptools-scm>=8"]
 name = "signal_discovery_workflow"
 dynamic = ["version"]
 dependencies = [
-  # Pin both NAT packages to the same compatible release line. Mixing different
-  # minor versions of nvidia-nat-* causes ImportErrors like
-  # "cannot import name 'register_dataset_loader' from 'nat.cli.register_workflow'".
-  "nvidia-nat[langchain]==1.6.*",
-  "nvidia-nat-phoenix==1.6.*",
+  "fastapi",
+  "uvicorn[standard]",
+  "sqlalchemy>=2.0",
+  "psycopg2-binary",
+  "python-jose",
+  "passlib",
+  "bcrypt<=4.0.1",
+  "cryptography",
+  "celery",
+  "redis",
+  "python-dotenv",
+  "aiohttp",
+  "torch",
+  "langchain-core",
+  "langchain-openai",
+  "langgraph",
+  "scikit-learn",
+  "scipy",
   "pandas",
   "numpy",
-  "scipy",
-  "yfinance",
-  "arize-phoenix",
-  "arize-phoenix-otel",
-  "openinference-instrumentation-langchain",
-  "jupyter",
+  "python-multipart",
 ]
 requires-python = ">=3.11,<3.14"
 description = "Signal Discovery Workflow - Example for NeMo Agent Toolkit"

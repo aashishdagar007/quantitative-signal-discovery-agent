@@ -1,0 +1,52 @@
+# ROLE AND MISSION
+Act as a Lead Quantitative Software Architect and Full-Stack Security Engineer. Your mission is to scaffold and implement a production-grade, self-hosted AI Trading System with advanced cryptographic security and cross-platform cloud readiness.
+Deployment Target: Multi-Asset (Crypto & Forex).
+Do not write placeholders. Generate complete configuration files, architectural scaffolding, and the core integration logic following strict enterprise engineering standards.
+
+# WORKSPACE INSTRUCTIONS
+All code should be written to the current active workspace. Structure the repository as a monorepo containing `/backend`, `/frontend`, `/core_engine`, `/security`, `/blockchain_audit`, and `/infrastructure`.
+
+# ARCHITECTURE & INTEGRATION REQUIREMENTS
+
+1. ORCHESTRATION & CLOUD INFRASTRUCTURE (QuantDinger methodology):
+Build the overarching local-first AI Trading OS using Python (FastAPI). 
+- State/Storage: PostgreSQL for dynamic state and Redis for Celery background workers.
+- Team Access: Implement Role-Based Access Control (RBAC) configured for a core development team of 4 members. Initialize the default admin database seed with the username "Lalit".
+- Cross-Platform Cloud Ready: Generate Dockerized configurations that seamlessly transition from local execution to scalable cloud deployments. Create a secure `.env` loader for user API keys.
+
+2. DUAL-MARKET EXECUTION CORE (Nautilus Trader methodology):
+Implement an event-driven, ultra-low-latency core (Rust/Python) capable of deterministic backtesting across distinct asset classes simultaneously.
+- Crypto Integration: Connect directly to the Binance API (Spot & Futures) via WebSockets for real-time tick data and execution.
+- Forex Integration (MQL5/FIX Bridge): Build a dedicated bridge to MetaTrader 5 designed to route signals for automated algorithmic trading systems. Explicitly configure the optimization pipeline to host the `PulseHyperHybrid` bot targeting the EUR/USD pair.
+- Ensure the event loop can synchronize crypto OHLCV and forex tick data streams without blocking.
+
+3. AI RESEARCH DESK (TradingAgents methodology):
+Build a LangGraph-based multi-agent pipeline featuring specialized LLM agents (Fundamentals, Sentiment, Technical, Debaters, and Risk Manager). These agents must process both macroeconomic forex news and crypto-specific on-chain sentiment, outputting a cryptographically signed directional consensus before passing a signal to the execution core.
+
+4. PROBABILISTIC FORECASTING (Kronos methodology):
+Create a dedicated inference module loading a pre-trained decoder-only transformer model (e.g., Kronos-base). Write a highly optimized data pipeline that tokenizes incoming dual-market CSV data and outputs a probabilistic price distribution matrix for both Binance crypto pairs and forex pairs.
+
+5. PORTFOLIO ALLOCATION (Skfolio methodology):
+Implement a scikit-learn-compatible risk management module. Process signals from the AI Desk and Kronos through this module to calculate optimal cross-asset position sizing using Hierarchical Risk Parity (HRP) and Conditional Value at Risk (CVaR).
+
+6. PINE SCRIPT TRANSPILATION:
+Integrate a Pine Script execution layer utilizing Python AST transformers (e.g., `pynecore`). Build a service parsing `.pine` files from a `/strategies` folder for native execution alongside the core engine's native Python strategies.
+
+7. LOW-LEVEL SECURITY & BLOCKCHAIN ARCHITECTURE:
+- Security Profiler: Inside the `/security` module, scaffold a custom C++ behavior profiler utilizing low-level constraints to track security state changes, prevent memory leaks in the high-frequency trading loop, and monitor execution anomalies.
+- Immutable Ledger: Inside `/blockchain_audit`, integrate a lightweight blockchain architecture (or Merkle tree structure) to cryptographically log all executed trades, system state changes, and AI consensus decisions, ensuring a tamper-proof audit trail.
+
+# FRONTEND UI (Visual Excellence Mandate)
+Build the frontend dashboard using Next.js or highly optimized vanilla HTML5/JS/CSS.
+- Theme: Implement a deep-space dynamic universe theme with a sleek dark mode.
+- Interactive Background: Code a sophisticated HTML5 canvas starfield graphic featuring physics-based animations. Ensure the canvas behavior includes precise star triangulation, radar scanning effects reacting to live Binance and Forex market data.
+- State Loaders: Design custom deep-space themed loaders for data fetching and system initialization states.
+- Data Visualization: Render real-time multi-asset charts displaying historical prices overlaid with Kronos forecasts, active Nautilus positions across both markets, and a live terminal window streaming the LangGraph agent debates.
+
+# EXECUTION PLAN
+1. Scaffold the Docker-compose, Postgres, Redis, and blockchain-audit infrastructure.
+2. Generate the FastAPI backend routing, the 4-user RBAC system, and the LangGraph multi-agent setup.
+3. Build the dual-market execution adapter (Binance WebSockets + MQL5 bridge for `PulseHyperHybrid`), and the pynecore parser.
+4. Scaffold the C++ security state tracker and integrate it with the execution core.
+5. Build the HTML5 Canvas starfield frontend with the custom dynamic loader.
+Output the code systematically, ensuring all modules are tightly coupled yet independently verifiable.

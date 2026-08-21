@@ -1,0 +1,58 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: trading_db
+      POSTGRES_USER: trading_user
+      POSTGRES_PASSWORD: trading_pass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["--save", "", "--appendonly", "no"]
+    ports:
+      - "6379:6379"
+
+  blockchain-audit:
+    image: ubuntu:22.04
+    restart: unless-stopped
+    working_dir: /app
+    command: >
+      bash -c "
+      apt-get update && apt-get install -y python3 python3-pip && pip3 install pycryptodome && python3 -c "
+from hashlib import sha256, blake2b
+import json
+
+class SimpleBlockchain:
+    def __init__(self):
+        self.chain = [[0, 'genesis', '0', '0000']]
+        self.nodes = set()
+
+    def add_block(self, block_data):
+        last_block = self.chain[-1]
+        block_index = last_block[0] + 1
+        timestamp = str(__import__('datetime').datetime.now().timestamp())
+        previous_hash = last_block[3]
+        block_data_str = json.dumps(block_data, sort_keys=True)
+        block_hash = sha256((block_data_str + previous_hash).encode()).hexdigest()
+        self.chain.append([block_index, timestamp, block_data_str, block_hash])
+        return block_hash
+
+bc = SimpleBlockchain()
+trade = {'trade_id': 'mock', 'symbol': 'EUR/USD', 'price': 1.08}
+bc.add_block(trade)
+print('Blockchain initialized with', len(bc.chain), 'blocks')
+"
+      "
+    ports:
+      - "5000:5000"
+
+volumes:
+  postgres_data:

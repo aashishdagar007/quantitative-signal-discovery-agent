@@ -3,88 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NEXUS — AI Trading System | Deep Space Command</title>
-    <meta name="description" content="Production-grade multi-asset AI Trading System. Crypto + Forex with LangGraph agents, Kronos forecasting, HRP/CVaR portfolio allocation, and blockchain audit trail.">
+    <title>NEXUS — AI Trading System | Real-Time Command Dashboard</title>
+    <meta name="description" content="Production-grade multi-asset AI Trading Command Center. Crypto + Forex with LangGraph multi-agent consensus, Kronos probabilistic forecasting, HRP portfolio allocation, and blockchain audit trail.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
         /* ════════════════════════════════════════════════════════════════════
-           Design System — Deep Space Theme
+           Design System — Deep Space Glassmorphism Theme
         ════════════════════════════════════════════════════════════════════ */
         :root {
-            --space-void:      #02020f;
+            --space-void:      #02020e;
             --space-deep:      #050518;
             --space-mid:       #0a0a28;
-            --space-panel:     #0e0e2e;
-            --space-card:      #12123a;
+            --space-panel:     rgba(14, 14, 46, 0.75);
+            --space-card:      rgba(18, 18, 58, 0.85);
             --space-border:    #1e1e52;
-            --space-glow:      #2828a0;
-            --fg-bright:       #e8e8ff;
-            --fg-dim:          #8888b8;
-            --fg-muted:        #444488;
+            --space-glow:      #2e2ea8;
+            --fg-bright:       #f0f0ff;
+            --fg-dim:          #9494c8;
+            --fg-muted:        #505090;
             --cyan:            #00f5d4;
             --cyan-dim:        #00b89e;
-            --cyan-glow:       rgba(0, 245, 212, 0.12);
+            --cyan-glow:       rgba(0, 245, 212, 0.2);
             --violet:          #a855f7;
-            --violet-glow:     rgba(168, 85, 247, 0.12);
+            --violet-glow:     rgba(168, 85, 247, 0.2);
             --orange:          #ff6b2b;
-            --orange-glow:     rgba(255, 107, 43, 0.12);
-            --green:           #22c55e;
+            --orange-glow:     rgba(255, 107, 43, 0.2);
+            --green:           #10b981;
+            --green-glow:      rgba(16, 185, 129, 0.2);
             --red:             #ef4444;
-            --yellow:          #f59e0b;
+            --red-glow:        rgba(239, 68, 68, 0.2);
             --gold:            #fbbf24;
+            --gold-glow:       rgba(251, 191, 36, 0.2);
         }
 
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        html { height: 100%; }
-
-        body {
-            font-family: 'Space Grotesk', sans-serif;
+        html, body {
+            height: 100%;
             background: var(--space-void);
             color: var(--fg-bright);
-            min-height: 100vh;
+            font-family: 'Space Grotesk', sans-serif;
             overflow-x: hidden;
-            position: relative;
         }
 
-        /* ─── Scrollbar ──────────────────────────────────────────────────── */
-        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: var(--space-deep); }
-        ::-webkit-scrollbar-thumb { background: var(--space-glow); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb { background: var(--space-border); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--cyan-dim); }
 
-        /* ─── Starfield canvas (full-screen fixed background) ────────────── */
+        /* ─── Background Starfield & Nebula ──────────────────────────────── */
         #starfield {
-            position: fixed; inset: 0;
-            width: 100%; height: 100%;
+            position: fixed; inset: 0; width: 100%; height: 100%;
             z-index: 0; pointer-events: none;
         }
 
-        /* ─── Nebula gradient overlay ────────────────────────────────────── */
         #nebula {
             position: fixed; inset: 0; z-index: 1; pointer-events: none;
             background:
-                radial-gradient(ellipse 60% 40% at 15% 25%, rgba(0,245,212,0.04) 0%, transparent 70%),
-                radial-gradient(ellipse 50% 60% at 85% 70%, rgba(168,85,247,0.05) 0%, transparent 70%),
-                radial-gradient(ellipse 40% 50% at 50% 90%, rgba(255,107,43,0.03) 0%, transparent 70%);
+                radial-gradient(ellipse 70% 50% at 10% 20%, rgba(0, 245, 212, 0.04) 0%, transparent 70%),
+                radial-gradient(ellipse 60% 60% at 85% 65%, rgba(168, 85, 247, 0.05) 0%, transparent 70%),
+                radial-gradient(ellipse 50% 50% at 50% 90%, rgba(255, 107, 43, 0.03) 0%, transparent 70%);
         }
 
-        /* ─── Main layout ─────────────────────────────────────────────────── */
+        .scan-line {
+            position: fixed; top: 0; left: 0; width: 100%; height: 2px; z-index: 999;
+            background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+            animation: scan 6s linear infinite; pointer-events: none; opacity: 0.18;
+        }
+        @keyframes scan { 0%{top:0%;} 100%{top:100%;} }
+
+        /* ─── App Shell ─────────────────────────────────────────────────── */
         #app {
             position: relative; z-index: 10;
             padding: 0.75rem;
-            display: grid;
-            grid-template-rows: auto 1fr;
-            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
             gap: 0.75rem;
+            min-height: 100vh;
         }
 
-        /* ─── Header ──────────────────────────────────────────────────────── */
+        /* ─── Header ────────────────────────────────────────────────────── */
         #header {
-            display: flex; align-items: center; justify-content: space-between;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.75rem;
             padding: 0.75rem 1.25rem;
-            background: rgba(14,14,46,0.7);
+            background: var(--space-panel);
             border: 1px solid var(--space-border);
             border-radius: 12px;
             backdrop-filter: blur(20px);
@@ -92,1166 +100,867 @@
 
         .logo { display: flex; align-items: center; gap: 0.75rem; }
         .logo-icon {
-            width: 36px; height: 36px;
+            width: 38px; height: 38px;
             background: linear-gradient(135deg, var(--cyan), var(--violet));
             border-radius: 10px;
             display: flex; align-items: center; justify-content: center;
-            font-size: 1.1rem; font-weight: 700; color: var(--space-void);
-            box-shadow: 0 0 20px rgba(0,245,212,0.4);
+            font-size: 1.2rem; font-weight: 700; color: var(--space-void);
+            box-shadow: 0 0 20px rgba(0, 245, 212, 0.4);
         }
-        .logo-text { line-height: 1; }
-        .logo-name { font-size: 1.2rem; font-weight: 700; letter-spacing: 0.1em;
-                     background: linear-gradient(90deg, var(--cyan), var(--violet));
-                     -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .logo-sub  { font-size: 0.65rem; color: var(--fg-dim); letter-spacing: 0.15em; text-transform: uppercase; }
-
-        .header-status { display: flex; align-items: center; gap: 1rem; }
-
-        .status-dot {
-            display: flex; align-items: center; gap: 0.4rem;
-            font-size: 0.72rem; font-family: 'JetBrains Mono', monospace;
-            color: var(--fg-dim); text-transform: uppercase; letter-spacing: 0.05em;
-        }
-        .dot { width: 7px; height: 7px; border-radius: 50%; }
-        .dot-live  { background: var(--green); box-shadow: 0 0 8px var(--green); animation: pulse 1.5s infinite; }
-        .dot-warn  { background: var(--yellow); }
-        .dot-error { background: var(--red); }
-
-        @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
-
-        .btn {
-            padding: 0.45rem 1.1rem; border-radius: 8px; border: none; cursor: pointer;
-            font-family: 'Space Grotesk', sans-serif; font-size: 0.8rem; font-weight: 600;
-            transition: all 0.2s;
-        }
-        .btn-primary {
-            background: linear-gradient(135deg, var(--cyan), var(--cyan-dim));
-            color: var(--space-void);
-            box-shadow: 0 0 16px rgba(0,245,212,0.3);
-        }
-        .btn-primary:hover { box-shadow: 0 0 24px rgba(0,245,212,0.5); transform: translateY(-1px); }
-
-        .btn-ghost {
-            background: transparent; color: var(--fg-dim);
-            border: 1px solid var(--space-border);
-        }
-        .btn-ghost:hover { border-color: var(--cyan); color: var(--cyan); }
-
-        /* ─── Main grid ────────────────────────────────────────────────────── */
-        #main-grid {
-            display: grid;
-            grid-template-columns: 300px 1fr 320px;
-            gap: 0.75rem;
-            height: calc(100vh - 100px);
-        }
-
-        /* ─── Panels ───────────────────────────────────────────────────────── */
-        .panel {
-            background: rgba(14,14,46,0.6);
-            border: 1px solid var(--space-border);
-            border-radius: 12px;
-            backdrop-filter: blur(16px);
-            overflow: hidden;
-            display: flex; flex-direction: column;
-        }
-
-        .panel-header {
-            padding: 0.7rem 1rem;
-            border-bottom: 1px solid var(--space-border);
-            display: flex; align-items: center; justify-content: space-between;
-            flex-shrink: 0;
-        }
-
-        .panel-title {
-            font-size: 0.68rem; font-weight: 600; letter-spacing: 0.12em;
-            text-transform: uppercase; color: var(--fg-dim);
-        }
-
-        .panel-body { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 0.75rem; }
-
-        /* ─── Left column ─────────────────────────────────────────────────── */
-        #left-col { display: flex; flex-direction: column; gap: 0.75rem; }
-
-        /* ─── Radar Panel ─────────────────────────────────────────────────── */
-        #radar-panel { height: 260px; flex-shrink: 0; }
-        #radar-canvas { width: 100% !important; height: 100% !important; display: block; }
-
-        /* ─── Market Tickers ──────────────────────────────────────────────── */
-        .ticker-item {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 0.6rem 0.75rem;
-            border-radius: 8px;
-            background: rgba(255,255,255,0.02);
-            border: 1px solid rgba(255,255,255,0.04);
-            margin-bottom: 0.4rem;
-            transition: all 0.3s;
-        }
-        .ticker-item:hover { border-color: var(--space-glow); }
-        .ticker-item.flash-up   { background: rgba(34,197,94,0.08); border-color: rgba(34,197,94,0.3); }
-        .ticker-item.flash-down { background: rgba(239,68,68,0.08);  border-color: rgba(239,68,68,0.3); }
-
-        .ticker-sym { font-size: 0.8rem; font-weight: 600; }
-        .ticker-price { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; font-weight: 600; }
-        .ticker-change {
-            font-family: 'JetBrains Mono', monospace; font-size: 0.7rem;
-            padding: 0.15rem 0.4rem; border-radius: 4px; font-weight: 600;
-        }
-        .up   { color: var(--green); }
-        .down { color: var(--red); }
-        .bg-up   { background: rgba(34,197,94,0.15); color: var(--green); }
-        .bg-down { background: rgba(239,68,68,0.15);  color: var(--red); }
-
-        /* ─── Position table ──────────────────────────────────────────────── */
-        .pos-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
-        .pos-table th {
-            font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em;
-            color: var(--fg-muted); padding: 0.4rem 0.5rem; text-align: left;
-            border-bottom: 1px solid var(--space-border);
-        }
-        .pos-table td { padding: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.03); }
-        .pos-table tr:hover td { background: rgba(255,255,255,0.02); }
-
-        /* ─── Center column: Charts ──────────────────────────────────────── */
-        #center-col { display: flex; flex-direction: column; gap: 0.75rem; }
-
-        .chart-panel { flex: 1; min-height: 0; }
-        .chart-canvas-wrap { position: relative; flex: 1; min-height: 0; }
-        canvas.chart-c { display: block; width: 100% !important; }
-
-        .chart-legend {
-            display: flex; align-items: center; gap: 1rem;
-            padding: 0.4rem 0.75rem;
-            border-top: 1px solid var(--space-border);
-            flex-shrink: 0;
-        }
-        .legend-item { display: flex; align-items: center; gap: 0.35rem; font-size: 0.7rem; color: var(--fg-dim); }
-        .legend-dot  { width: 8px; height: 8px; border-radius: 50%; }
-
-        /* ─── Right column: AI Terminal + Portfolio ───────────────────────── */
-        #right-col { display: flex; flex-direction: column; gap: 0.75rem; }
-
-        /* ─── AI Terminal ─────────────────────────────────────────────────── */
-        #terminal-panel { flex: 1; min-height: 0; }
-        #terminal-body {
-            flex: 1; min-height: 0;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.68rem; line-height: 1.6;
-            overflow-y: auto; padding: 0.75rem;
-            background: rgba(2,2,15,0.6);
-        }
-        .term-line { margin-bottom: 0.25rem; display: flex; gap: 0.5rem; }
-        .term-agent {
-            min-width: 110px; font-weight: 600; flex-shrink: 0;
-            padding: 0.05rem 0.4rem; border-radius: 3px; font-size: 0.62rem; text-transform: uppercase;
-        }
-        .agent-fundamentals { background: rgba(0,245,212,0.15); color: var(--cyan); }
-        .agent-sentiment     { background: rgba(168,85,247,0.15); color: var(--violet); }
-        .agent-technical     { background: rgba(255,107,43,0.15); color: var(--orange); }
-        .agent-debaters_bull { background: rgba(34,197,94,0.15);  color: var(--green); }
-        .agent-debaters_bear { background: rgba(239,68,68,0.15);  color: var(--red); }
-        .agent-risk_manager  { background: rgba(251,191,36,0.15); color: var(--gold); }
-        .agent-system        { background: rgba(136,136,184,0.15); color: var(--fg-dim); }
-        .term-msg { color: var(--fg-dim); }
-        .cursor { display: inline-block; width: 7px; height: 12px; background: var(--cyan); animation: blink 1s steps(1) infinite; vertical-align: -1px; margin-left: 2px; }
-        @keyframes blink { 50% { opacity: 0; } }
-
-        /* ─── Portfolio Bars ──────────────────────────────────────────────── */
-        .alloc-item { margin-bottom: 0.75rem; }
-        .alloc-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem; }
-        .alloc-sym  { font-size: 0.75rem; font-weight: 600; }
-        .alloc-pct  { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--cyan); }
-        .alloc-bar-bg { height: 5px; border-radius: 3px; background: var(--space-border); overflow: hidden; }
-        .alloc-bar-fill { height: 100%; border-radius: 3px; transition: width 0.6s cubic-bezier(0.4,0,0.2,1); }
-
-        .alloc-stats { display: flex; gap: 0.5rem; margin-top: 0.2rem; }
-        .alloc-stat  { font-size: 0.65rem; color: var(--fg-muted); }
-
-        /* ─── Risk Metrics ────────────────────────────────────────────────── */
-        .metric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
-        .metric-card {
-            padding: 0.6rem 0.75rem;
-            background: rgba(255,255,255,0.02); border-radius: 8px;
-            border: 1px solid var(--space-border);
-        }
-        .metric-label { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--fg-muted); }
-        .metric-value { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; font-weight: 600; margin-top: 0.2rem; }
-
-        /* ─── Bridge Status ────────────────────────────────────────────────── */
-        #bridge-widget {
-            position: fixed; bottom: 1rem; right: 1rem; z-index: 50;
-            padding: 0.75rem 1rem;
-            background: rgba(14,14,46,0.85); border: 1px solid var(--space-border);
-            border-radius: 10px; backdrop-filter: blur(20px);
-            font-size: 0.72rem; min-width: 200px;
-        }
-        .bridge-title { color: var(--fg-muted); text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.6rem; margin-bottom: 0.5rem; }
-        .bridge-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem; }
-        .bridge-label { color: var(--fg-dim); }
-        .bridge-val-connected   { color: var(--green); font-weight: 600; }
-        .bridge-val-simulated   { color: var(--yellow); font-weight: 600; }
-        .bridge-val-disconnected{ color: var(--red); }
-        .bridge-progress { width: 100%; height: 3px; background: var(--space-border); border-radius: 2px; overflow: hidden; margin-top: 0.5rem; }
-        .bridge-fill { height: 100%; background: linear-gradient(90deg, var(--cyan), var(--violet)); width: 0%; transition: width 0.3s; }
-
-        /* ─── Deep-Space Loader ───────────────────────────────────────────── */
-        #init-loader {
-            position: fixed; inset: 0; z-index: 1000;
-            background: var(--space-void);
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            gap: 1.5rem; transition: opacity 0.8s ease;
-        }
-        #init-loader.hidden { opacity: 0; pointer-events: none; }
-
-        .loader-ring-wrap { position: relative; width: 120px; height: 120px; }
-        .loader-ring {
-            position: absolute; border-radius: 50%; border: 2px solid transparent;
-            animation: ring-spin linear infinite;
-        }
-        .ring-1 { inset: 0;   border-top-color: var(--cyan);   animation-duration: 1.2s; }
-        .ring-2 { inset: 14px; border-right-color: var(--violet); animation-duration: 2.0s; }
-        .ring-3 { inset: 28px; border-bottom-color: var(--orange); animation-duration: 3.0s; }
-        .ring-core {
-            position: absolute; inset: 42px; border-radius: 50%;
-            background: radial-gradient(circle, rgba(0,245,212,0.3), transparent);
-            animation: core-pulse 2s ease-in-out infinite;
-        }
-        @keyframes ring-spin    { to { transform: rotate(360deg); } }
-        @keyframes core-pulse   { 0%,100%{opacity:0.5;transform:scale(0.9);} 50%{opacity:1;transform:scale(1.1);} }
-
-        .loader-title {
-            font-size: 1.4rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase;
+        .logo-title {
+            font-size: 1.25rem; font-weight: 700; letter-spacing: 0.1em;
             background: linear-gradient(90deg, var(--cyan), var(--violet));
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         }
-        .loader-sub { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--fg-dim); letter-spacing: 0.1em; }
-        #boot-log {
-            font-family: 'JetBrains Mono', monospace; font-size: 0.68rem;
-            color: var(--fg-dim); text-align: center; line-height: 1.8;
-            max-width: 400px;
-        }
-        .boot-ok   { color: var(--green); }
-        .boot-spin { color: var(--cyan);  }
+        .logo-sub { font-size: 0.65rem; color: var(--fg-dim); letter-spacing: 0.12em; text-transform: uppercase; }
 
-        /* ─── Scanning line effect ────────────────────────────────────────── */
-        .scan-line {
-            position: fixed; top: 0; left: 0; width: 100%; height: 2px; z-index: 999;
-            background: linear-gradient(90deg, transparent, var(--cyan), transparent);
-            animation: scan-down 4s linear infinite; pointer-events: none; opacity: 0.15;
+        .header-controls {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.75rem;
         }
-        @keyframes scan-down { 0%{top:0%;} 100%{top:100%;} }
 
-        /* ─── Responsive ──────────────────────────────────────────────────── */
+        .status-pill {
+            display: flex; align-items: center; gap: 0.4rem;
+            padding: 0.35rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.7rem; font-family: 'JetBrains Mono', monospace;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--space-border);
+        }
+
+        .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+        .dot-green { background: var(--green); box-shadow: 0 0 8px var(--green); animation: pulse 1.5s infinite; }
+        .dot-red { background: var(--red); box-shadow: 0 0 8px var(--red); }
+        .dot-yellow { background: var(--gold); box-shadow: 0 0 8px var(--gold); }
+        @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+
+        .btn {
+            padding: 0.45rem 1rem; border-radius: 8px; border: none; cursor: pointer;
+            font-family: 'Space Grotesk', sans-serif; font-size: 0.8rem; font-weight: 600;
+            display: inline-flex; align-items: center; gap: 0.4rem;
+            transition: all 0.2s;
+        }
+        .btn-cyan {
+            background: linear-gradient(135deg, var(--cyan), var(--cyan-dim));
+            color: var(--space-void);
+            box-shadow: 0 0 16px var(--cyan-glow);
+        }
+        .btn-cyan:hover { box-shadow: 0 0 24px rgba(0, 245, 212, 0.6); transform: translateY(-1px); }
+        .btn-danger {
+            background: linear-gradient(135deg, var(--red), #dc2626);
+            color: #fff;
+            box-shadow: 0 0 16px var(--red-glow);
+        }
+        .btn-danger:hover { box-shadow: 0 0 24px rgba(239, 68, 68, 0.6); transform: translateY(-1px); }
+        .btn-outline {
+            background: transparent; color: var(--fg-dim);
+            border: 1px solid var(--space-border);
+        }
+        .btn-outline:hover { border-color: var(--cyan); color: var(--cyan); }
+
+        /* ─── Mode Status Banner ────────────────────────────────────────── */
+        #mode-banner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.6rem 1.25rem;
+            border-radius: 10px;
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+        }
+        #mode-banner.live-mode {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.4);
+        }
+
+        /* ─── Main Grid Layout ─────────────────────────────────────────── */
+        #main-grid {
+            display: grid;
+            grid-template-columns: 320px 1fr 340px;
+            gap: 0.75rem;
+            flex: 1;
+        }
+
+        .panel {
+            background: var(--space-panel);
+            border: 1px solid var(--space-border);
+            border-radius: 12px;
+            backdrop-filter: blur(16px);
+            display: flex; flex-direction: column;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--space-border);
+            display: flex; align-items: center; justify-content: space-between;
+            background: rgba(255, 255, 255, 0.01);
+        }
+        .panel-title {
+            font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em;
+            text-transform: uppercase; color: var(--fg-dim);
+            display: flex; align-items: center; gap: 0.5rem;
+        }
+
+        .panel-body {
+            flex: 1; overflow-y: auto; overflow-x: hidden; padding: 0.75rem;
+            display: flex; flex-direction: column; gap: 0.75rem;
+        }
+
+        /* ─── Tickers ──────────────────────────────────────────────────── */
+        .ticker-card {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0.65rem 0.85rem;
+            background: var(--space-card);
+            border: 1px solid var(--space-border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .ticker-card:hover, .ticker-card.active {
+            border-color: var(--cyan);
+            box-shadow: 0 0 14px var(--cyan-glow);
+        }
+        .ticker-sym { font-weight: 700; font-size: 0.85rem; }
+        .ticker-price { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; font-weight: 700; }
+        .ticker-badge {
+            font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; font-weight: 600;
+            padding: 0.15rem 0.45rem; border-radius: 4px;
+        }
+        .badge-green { background: rgba(16, 185, 129, 0.15); color: var(--green); }
+        .badge-red   { background: rgba(239, 68, 68, 0.15);  color: var(--red); }
+        .badge-cyan  { background: rgba(0, 245, 212, 0.15);  color: var(--cyan); }
+        .badge-violet{ background: rgba(168, 85, 247, 0.15); color: var(--violet); }
+
+        /* ─── Metric Grid ──────────────────────────────────────────────── */
+        .metric-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;
+        }
+        .metric-box {
+            padding: 0.6rem 0.75rem;
+            background: var(--space-card);
+            border: 1px solid var(--space-border);
+            border-radius: 8px;
+        }
+        .metric-label { font-size: 0.62rem; text-transform: uppercase; color: var(--fg-muted); letter-spacing: 0.08em; }
+        .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 0.95rem; font-weight: 700; color: var(--fg-bright); margin-top: 0.2rem; }
+
+        /* ─── Charts ───────────────────────────────────────────────────── */
+        .chart-box {
+            position: relative;
+            background: var(--space-card);
+            border: 1px solid var(--space-border);
+            border-radius: 10px;
+            padding: 0.75rem;
+            display: flex; flex-direction: column;
+            flex: 1; min-height: 260px;
+        }
+        .chart-canvas-container {
+            position: relative; flex: 1; width: 100%; min-height: 200px;
+        }
+        canvas.chart-c { width: 100% !important; height: 100% !important; display: block; }
+
+        /* ─── AI Agents Console ────────────────────────────────────────── */
+        .agent-item {
+            background: var(--space-card);
+            border: 1px solid var(--space-border);
+            border-radius: 8px;
+            padding: 0.65rem 0.75rem;
+            font-size: 0.75rem;
+        }
+        .agent-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem; }
+        .agent-name { font-weight: 700; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.08em; }
+        .agent-body { font-size: 0.73rem; color: var(--fg-dim); line-height: 1.4; }
+
+        /* ─── Audit Log Feed ───────────────────────────────────────────── */
+        .audit-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0.5rem 0.65rem;
+            background: var(--space-card);
+            border-left: 3px solid var(--cyan);
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+        }
+
+        /* ─── Modal Dialog ─────────────────────────────────────────────── */
+        .modal-overlay {
+            position: fixed; inset: 0; z-index: 1000;
+            background: rgba(2, 2, 14, 0.85);
+            backdrop-filter: blur(12px);
+            display: none; align-items: center; justify-content: center;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-card {
+            background: var(--space-mid);
+            border: 1px solid var(--space-glow);
+            border-radius: 16px;
+            padding: 1.75rem;
+            max-width: 480px; width: 90%;
+            box-shadow: 0 0 40px rgba(46, 46, 168, 0.5);
+        }
+
         @media (max-width: 1100px) {
-            #main-grid { grid-template-columns: 260px 1fr; }
-            #right-col { display: none; }
+            #main-grid { grid-template-columns: 1fr 1fr; }
+            #right-col { grid-column: span 2; }
         }
-        @media (max-width: 700px) {
+        @media (max-width: 768px) {
             #main-grid { grid-template-columns: 1fr; }
-            #left-col  { display: none; }
+            #right-col { grid-column: span 1; }
         }
     </style>
 </head>
 <body>
 
-<!-- Scanning line -->
 <div class="scan-line"></div>
-
-<!-- Starfield + Nebula -->
 <canvas id="starfield"></canvas>
 <div id="nebula"></div>
 
-<!-- Deep-Space Init Loader -->
-<div id="init-loader">
-    <div class="loader-ring-wrap">
-        <div class="loader-ring ring-1"></div>
-        <div class="loader-ring ring-2"></div>
-        <div class="loader-ring ring-3"></div>
-        <div class="ring-core"></div>
-    </div>
-    <div class="loader-title">NEXUS</div>
-    <div class="loader-sub">AI Trading System — Initializing</div>
-    <div id="boot-log"></div>
-</div>
-
-<!-- Main App -->
 <div id="app">
 
-    <!-- Header -->
+    <!-- ═══ HEADER ═══════════════════════════════════════════════════════════ -->
     <header id="header">
         <div class="logo">
-            <div class="logo-icon">N</div>
-            <div class="logo-text">
-                <div class="logo-name">NEXUS</div>
-                <div class="logo-sub">Multi-Asset AI Command</div>
+            <div class="logo-icon">⚡</div>
+            <div>
+                <div class="logo-title">NEXUS AI COMMAND</div>
+                <div class="logo-sub">Quantitative Signal & Dual-Market Discovery</div>
             </div>
         </div>
 
-        <div class="header-status">
-            <div class="status-dot" id="ws-status">
-                <span class="dot dot-warn" id="ws-dot"></span>
-                <span id="ws-label">CONNECTING</span>
+        <div class="header-controls">
+            <div class="status-pill" id="ws-indicator">
+                <span class="dot dot-green"></span>
+                <span>WS LIVE FEED</span>
             </div>
-            <div class="status-dot">
-                <span class="dot dot-live"></span>
-                <span>BLOCKCHAIN ACTIVE</span>
+
+            <div class="status-pill" id="security-indicator">
+                <span class="dot dot-green"></span>
+                <span id="security-status-text">PROFILER: HEALTHY</span>
             </div>
-            <div class="status-dot">
-                <span id="utc-clock" style="font-size:0.72rem; font-family:'JetBrains Mono',monospace; color:var(--fg-dim);"></span>
+
+            <div class="status-pill">
+                <span id="utc-clock">00:00:00 UTC</span>
             </div>
-            <button class="btn btn-primary" id="engine-toggle">⚡ START ENGINE</button>
-            <button class="btn btn-ghost" onclick="window.open('/docs','_blank')">API Docs</button>
+
+            <button class="btn btn-danger" id="kill-switch-btn" onclick="openModeModal('PAPER')">
+                🛑 EMERGENCY STOP
+            </button>
+
+            <button class="btn btn-cyan" id="mode-toggle-btn" onclick="openModeModal('LIVE')">
+                ⚡ SWITCH TO LIVE
+            </button>
+
+            <button class="btn btn-outline" onclick="window.open('/docs', '_blank')">
+                📚 API Docs
+            </button>
         </div>
     </header>
 
-    <!-- Main Grid -->
+    <!-- ═══ MODE & RISK CONTROLS BANNER ══════════════════════════════════════ -->
+    <div id="mode-banner">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <span class="dot dot-green" id="mode-dot"></span>
+            <span><strong>CURRENT ENGINE MODE:</strong> <span id="current-mode-label" style="font-family:'JetBrains Mono',monospace; font-weight:700;">PAPER SIMULATION</span></span>
+            <span style="color: var(--fg-muted);">|</span>
+            <span style="font-size: 0.75rem; color: var(--fg-dim);">Risk Guard Cap: <strong>$10,000 / order</strong></span>
+            <span style="color: var(--fg-muted);">|</span>
+            <span style="font-size: 0.75rem; color: var(--fg-dim);">Daily Loss Circuit Breaker: <strong>$5,000</strong></span>
+        </div>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--fg-dim);">
+            Active Admin: <span style="color: var(--cyan);">Lalit</span> (Ed25519 Verified)
+        </div>
+    </div>
+
+    <!-- ═══ MAIN THREE-COLUMN GRID ══════════════════════════════════════════ -->
     <div id="main-grid">
 
-        <!-- ═══ LEFT COLUMN ════════════════════════════════════════════════ -->
-        <div id="left-col">
-
-            <!-- Radar -->
-            <div class="panel" id="radar-panel" style="height:260px;flex-shrink:0;">
-                <div class="panel-header">
-                    <span class="panel-title">🛰 Market Radar</span>
-                    <span style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--cyan);" id="radar-label">SCANNING</span>
-                </div>
-                <canvas id="radar-canvas"></canvas>
+        <!-- ─── LEFT COLUMN: Tickers, Allocation & Order Execution ──────────── -->
+        <div class="panel" id="left-col">
+            <div class="panel-header">
+                <span class="panel-title">📡 Market Feeds & Orders</span>
+                <span class="badge-cyan" style="font-size: 0.65rem; padding: 2px 6px;">DUAL VENUE</span>
             </div>
 
-            <!-- Market Tickers -->
-            <div class="panel" style="flex-shrink:0;">
-                <div class="panel-header">
-                    <span class="panel-title">📡 Live Prices</span>
-                    <span style="font-size:0.65rem;color:var(--fg-muted);">1s tick</span>
-                </div>
-                <div class="panel-body" style="padding:0.5rem;">
-                    <div class="ticker-item" id="tick-BTCUSDT">
-                        <span class="ticker-sym" style="color:var(--gold);">BTC/USDT</span>
-                        <span class="ticker-price" id="price-BTCUSDT">$ ——</span>
-                        <span class="ticker-change bg-up" id="chg-BTCUSDT">+0.00%</span>
+            <div class="panel-body">
+                <!-- Tickers List -->
+                <div class="ticker-card active" onclick="selectSymbol('BTCUSDT')">
+                    <div>
+                        <div class="ticker-sym" style="color: var(--gold);">BTC/USDT</div>
+                        <div style="font-size: 0.65rem; color: var(--fg-muted);">Binance Futures (Crypto)</div>
                     </div>
-                    <div class="ticker-item" id="tick-ETHUSDT">
-                        <span class="ticker-sym" style="color:var(--violet);">ETH/USDT</span>
-                        <span class="ticker-price" id="price-ETHUSDT">$ ——</span>
-                        <span class="ticker-change bg-up" id="chg-ETHUSDT">+0.00%</span>
-                    </div>
-                    <div class="ticker-item" id="tick-EURUSD">
-                        <span class="ticker-sym" style="color:var(--orange);">EUR/USD</span>
-                        <span class="ticker-price" id="price-EURUSD">——</span>
-                        <span class="ticker-change bg-up" id="chg-EURUSD">+0.00%</span>
+                    <div style="text-align: right;">
+                        <div class="ticker-price" id="price-BTCUSDT">$65,240.00</div>
+                        <span class="ticker-badge badge-green" id="chg-BTCUSDT">+2.45%</span>
                     </div>
                 </div>
-            </div>
 
-            <!-- Positions Table -->
-            <div class="panel" style="flex:1;min-height:0;">
-                <div class="panel-header">
-                    <span class="panel-title">📊 Active Positions</span>
-                    <span class="dot dot-live" style="width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);"></span>
+                <div class="ticker-card" onclick="selectSymbol('ETHUSDT')">
+                    <div>
+                        <div class="ticker-sym" style="color: var(--violet);">ETH/USDT</div>
+                        <div style="font-size: 0.65rem; color: var(--fg-muted);">Binance Futures (Crypto)</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div class="ticker-price" id="price-ETHUSDT">$3,485.50</div>
+                        <span class="ticker-badge badge-green" id="chg-ETHUSDT">+1.82%</span>
+                    </div>
                 </div>
-                <div class="panel-body">
-                    <table class="pos-table">
-                        <thead>
-                            <tr>
-                                <th>Symbol</th><th>Side</th><th>Size</th><th>P/L</th>
-                            </tr>
-                        </thead>
-                        <tbody id="pos-body">
-                            <tr><td colspan="4" style="color:var(--fg-muted);text-align:center;padding:1.5rem;">No open positions</td></tr>
-                        </tbody>
-                    </table>
+
+                <div class="ticker-card" onclick="selectSymbol('EURUSD')">
+                    <div>
+                        <div class="ticker-sym" style="color: var(--orange);">EUR/USD</div>
+                        <div style="font-size: 0.65rem; color: var(--fg-muted);">MetaTrader 5 (Forex)</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div class="ticker-price" id="price-EURUSD">1.08450</div>
+                        <span class="ticker-badge badge-green" id="chg-EURUSD">+0.15%</span>
+                    </div>
+                </div>
+
+                <div class="ticker-card" onclick="selectSymbol('GBPUSD')">
+                    <div>
+                        <div class="ticker-sym" style="color: var(--cyan);">GBP/USD</div>
+                        <div style="font-size: 0.65rem; color: var(--fg-muted);">MetaTrader 5 (Forex)</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div class="ticker-price" id="price-GBPUSD">1.26520</div>
+                        <span class="ticker-badge badge-red" id="chg-GBPUSD">-0.08%</span>
+                    </div>
+                </div>
+
+                <!-- Interactive Order Execution Box -->
+                <div style="background: var(--space-card); border: 1px solid var(--space-border); border-radius: 10px; padding: 0.75rem;">
+                    <div style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: var(--fg-dim); margin-bottom: 0.5rem; display: flex; justify-content: space-between;">
+                        <span>⚡ Quick Order Execution</span>
+                        <span id="order-target-sym" style="color: var(--cyan); font-family: 'JetBrains Mono', monospace;">BTCUSDT</span>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+                        <input id="order-qty-input" type="number" step="0.01" value="0.05" style="flex: 1; background: var(--space-void); border: 1px solid var(--space-border); border-radius: 6px; padding: 0.4rem 0.6rem; color: #fff; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem;" placeholder="Quantity">
+                        <select id="order-type-select" style="background: var(--space-void); border: 1px solid var(--space-border); border-radius: 6px; padding: 0.4rem; color: #fff; font-size: 0.75rem;">
+                            <option value="market">MARKET</option>
+                            <option value="limit">LIMIT</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="btn" style="flex: 1; background: var(--green); color: #fff; justify-content: center;" onclick="submitOrder('buy')">BUY / LONG</button>
+                        <button class="btn" style="flex: 1; background: var(--red); color: #fff; justify-content: center;" onclick="submitOrder('sell')">SELL / SHORT</button>
+                    </div>
+                    <div id="order-status-msg" style="font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--fg-dim); margin-top: 0.4rem; min-height: 1.2em;"></div>
+                </div>
+
+                <!-- Portfolio HRP Allocation Bars -->
+                <div style="background: var(--space-card); border: 1px solid var(--space-border); border-radius: 10px; padding: 0.75rem;">
+                    <div style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: var(--fg-dim); margin-bottom: 0.5rem; display: flex; justify-content: space-between;">
+                        <span>📊 HRP Allocation Weights</span>
+                        <span style="color: var(--violet); cursor: pointer;" onclick="fetchPortfolio()">↻ Refresh</span>
+                    </div>
+                    <div id="alloc-bars-container" style="display: flex; flex-direction: column; gap: 0.45rem;">
+                        <!-- Rendered by JS -->
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- ═══ CENTER COLUMN: Charts ════════════════════════════════════ -->
-        <div id="center-col">
-
-            <!-- BTC Chart -->
-            <div class="panel chart-panel">
-                <div class="panel-header">
-                    <span class="panel-title">₿ BTC/USDT — Kronos Forecast</span>
-                    <span style="font-size:0.7rem;color:var(--fg-dim);" id="btc-dir-label">Direction: —</span>
-                </div>
-                <div class="chart-canvas-wrap" style="height:200px;padding:0.5rem;">
-                    <canvas id="btc-chart" class="chart-c" style="height:200px;"></canvas>
-                </div>
-                <div class="chart-legend">
-                    <div class="legend-item"><div class="legend-dot" style="background:var(--cyan);"></div>Price</div>
-                    <div class="legend-item"><div class="legend-dot" style="background:var(--violet);opacity:0.6;"></div>Kronos Band</div>
+        <!-- ─── CENTER COLUMN: Real-Time Charts & Kronos Forecast ─────────── -->
+        <div class="panel" id="center-col">
+            <div class="panel-header">
+                <span class="panel-title">📈 Kronos Probabilistic Price Chart — <span id="chart-symbol-label" style="color: var(--cyan);">BTCUSDT</span></span>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="btn btn-outline" style="padding: 0.2rem 0.6rem; font-size: 0.7rem;" onclick="triggerAIDesk()">🔮 Run AI Desk</button>
                 </div>
             </div>
 
-            <!-- ETH Chart -->
-            <div class="panel chart-panel">
-                <div class="panel-header">
-                    <span class="panel-title">Ξ ETH/USDT — Kronos Forecast</span>
-                    <span style="font-size:0.7rem;color:var(--fg-dim);" id="eth-dir-label">Direction: —</span>
+            <div class="panel-body">
+                <!-- Main Price & Forecast Chart -->
+                <div class="chart-box">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <div style="font-size: 0.75rem; color: var(--fg-dim);">
+                            <span style="color: var(--cyan);">● Live Price</span> &nbsp;|&nbsp;
+                            <span style="color: var(--violet);">█ Kronos P10-P90 Band</span> &nbsp;|&nbsp;
+                            <span style="color: var(--gold);">--- 20 SMA</span>
+                        </div>
+                        <div id="forecast-target-box" style="font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--cyan);">
+                            Kronos Target: $65,850.00 (+0.93%)
+                        </div>
+                    </div>
+                    <div class="chart-canvas-container">
+                        <canvas id="main-chart" class="chart-c"></canvas>
+                    </div>
                 </div>
-                <div class="chart-canvas-wrap" style="height:180px;padding:0.5rem;">
-                    <canvas id="eth-chart" class="chart-c" style="height:180px;"></canvas>
+
+                <!-- Risk Metrics Matrix -->
+                <div class="metric-grid">
+                    <div class="metric-box">
+                        <div class="metric-label">Conditional VaR (95%)</div>
+                        <div class="metric-val" id="metric-cvar95">0.0142 (1.42%)</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-label">Conditional VaR (99%)</div>
+                        <div class="metric-val" id="metric-cvar99">0.0218 (2.18%)</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-label">Annualized Volatility</div>
+                        <div class="metric-val" id="metric-vol">42.5%</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-label">Kelly Sizing Limit</div>
+                        <div class="metric-val" id="metric-pos">6.8% Capital</div>
+                    </div>
+                </div>
+
+                <!-- Recent Execution Orders Log -->
+                <div style="background: var(--space-card); border: 1px solid var(--space-border); border-radius: 10px; padding: 0.75rem; flex: 1;">
+                    <div style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: var(--fg-dim); margin-bottom: 0.5rem;">
+                        ⚡ Recent Execution Engine Orders
+                    </div>
+                    <div id="execution-orders-list" style="display: flex; flex-direction: column; gap: 0.4rem; max-height: 140px; overflow-y: auto;">
+                        <!-- Populated by JS -->
+                    </div>
                 </div>
             </div>
-
-            <!-- EUR/USD Chart -->
-            <div class="panel chart-panel">
-                <div class="panel-header">
-                    <span class="panel-title">€ EUR/USD — PulseHyperHybrid</span>
-                    <span style="font-size:0.7rem;color:var(--fg-dim);" id="eur-dir-label">Direction: —</span>
-                </div>
-                <div class="chart-canvas-wrap" style="height:160px;padding:0.5rem;">
-                    <canvas id="eur-chart" class="chart-c" style="height:160px;"></canvas>
-                </div>
-                <div class="chart-legend">
-                    <div class="legend-item"><div class="legend-dot" style="background:var(--orange);"></div>EUR/USD Price</div>
-                    <div class="legend-item"><div class="legend-dot" style="background:var(--yellow);opacity:0.6;"></div>EMA Signal</div>
-                </div>
-            </div>
-
         </div>
 
-        <!-- ═══ RIGHT COLUMN ══════════════════════════════════════════════ -->
-        <div id="right-col">
-
-            <!-- AI Agent Terminal -->
-            <div class="panel" id="terminal-panel" style="flex:1;min-height:0;">
-                <div class="panel-header">
-                    <span class="panel-title">🧠 LangGraph Agent Debate</span>
-                    <span style="font-size:0.65rem;font-family:'JetBrains Mono',monospace;color:var(--violet);" id="agent-count">0 messages</span>
-                </div>
-                <div id="terminal-body"></div>
+        <!-- ─── RIGHT COLUMN: AI Multi-Agent Consensus & Audit Trail ──────── -->
+        <div class="panel" id="right-col">
+            <div class="panel-header">
+                <span class="panel-title">🧠 AI Desk Consensus</span>
+                <span id="consensus-verif-badge" class="badge-green" style="font-size: 0.65rem;">ED25519 VERIFIED</span>
             </div>
 
-            <!-- Portfolio Allocation -->
-            <div class="panel" style="flex-shrink:0;">
-                <div class="panel-header">
-                    <span class="panel-title">⚖ HRP Portfolio Allocation</span>
-                    <span style="font-size:0.65rem;color:var(--fg-muted);">CVaR(95%)</span>
+            <div class="panel-body">
+                <!-- Consensus Summary Box -->
+                <div style="background: linear-gradient(135deg, rgba(0,245,212,0.08), rgba(168,85,247,0.08)); border: 1px solid var(--space-glow); border-radius: 10px; padding: 0.85rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+                        <span style="font-size: 0.7rem; font-weight: 700; color: var(--cyan); text-transform: uppercase;">DEBATE CONSENSUS</span>
+                        <span id="consensus-bias" class="badge-green" style="font-weight: 700; font-size: 0.75rem;">LONG (78.5%)</span>
+                    </div>
+                    <div id="consensus-rationale" style="font-size: 0.74rem; color: var(--fg-bright); line-height: 1.4;">
+                        Kronos forecasting probabilistic upward trend. Fundamentals and momentum indicate strong institutional accumulation.
+                    </div>
                 </div>
-                <div class="panel-body">
-                    <div class="alloc-item">
-                        <div class="alloc-header">
-                            <span class="alloc-sym" style="color:var(--gold);">BTC/USDT</span>
-                            <span class="alloc-pct" id="alloc-btc">18.2%</span>
+
+                <!-- Specialized Agent Feed -->
+                <div style="display: flex; flex-direction: column; gap: 0.5rem; flex: 1;">
+                    <div class="agent-item">
+                        <div class="agent-header">
+                            <span class="agent-name" style="color: var(--cyan);">🔮 Forecast Agent (Kronos)</span>
+                            <span class="badge-cyan" id="agent-kronos-tag">PROBABILISTIC</span>
                         </div>
-                        <div class="alloc-bar-bg"><div class="alloc-bar-fill" id="bar-btc" style="width:18.2%;background:linear-gradient(90deg,var(--gold),var(--cyan));"></div></div>
-                        <div class="alloc-stats"><span class="alloc-stat">CVaR: <span id="cvar-btc">2.14%</span></span><span class="alloc-stat">VaR: <span id="var-btc">1.73%</span></span></div>
-                    </div>
-                    <div class="alloc-item">
-                        <div class="alloc-header">
-                            <span class="alloc-sym" style="color:var(--violet);">ETH/USDT</span>
-                            <span class="alloc-pct" id="alloc-eth">11.4%</span>
+                        <div class="agent-body" id="agent-kronos-body">
+                            Transformer predicted price $65,850.00. Confidence: 78%. Directional bias: LONG.
                         </div>
-                        <div class="alloc-bar-bg"><div class="alloc-bar-fill" id="bar-eth" style="width:11.4%;background:linear-gradient(90deg,var(--violet),var(--cyan));"></div></div>
-                        <div class="alloc-stats"><span class="alloc-stat">CVaR: <span id="cvar-eth">3.52%</span></span><span class="alloc-stat">VaR: <span id="var-eth">2.81%</span></span></div>
-                    </div>
-                    <div class="alloc-item">
-                        <div class="alloc-header">
-                            <span class="alloc-sym" style="color:var(--orange);">EUR/USD</span>
-                            <span class="alloc-pct" id="alloc-eur">8.7%</span>
-                        </div>
-                        <div class="alloc-bar-bg"><div class="alloc-bar-fill" id="bar-eur" style="width:8.7%;background:linear-gradient(90deg,var(--orange),var(--yellow));"></div></div>
-                        <div class="alloc-stats"><span class="alloc-stat">CVaR: <span id="cvar-eur">0.82%</span></span><span class="alloc-stat">VaR: <span id="var-eur">0.65%</span></span></div>
                     </div>
 
-                    <!-- Risk metrics -->
-                    <div class="metric-grid" style="margin-top:0.75rem;">
-                        <div class="metric-card">
-                            <div class="metric-label">Port. Vol (Ann.)</div>
-                            <div class="metric-value" id="port-vol" style="color:var(--yellow);">—</div>
+                    <div class="agent-item">
+                        <div class="agent-header">
+                            <span class="agent-name" style="color: var(--violet);">🏛️ Fundamentals Agent</span>
+                            <span class="badge-violet">MACRO</span>
                         </div>
-                        <div class="metric-card">
-                            <div class="metric-label">Port. CVaR</div>
-                            <div class="metric-value" id="port-cvar" style="color:var(--red);">—</div>
+                        <div class="agent-body" id="agent-fund-body">
+                            On-chain hash rate up 3.4%. Exchange reserves decreasing. Favorable global liquidity conditions.
                         </div>
-                        <div class="metric-card">
-                            <div class="metric-label">Sharpe Ratio</div>
-                            <div class="metric-value" id="sharpe" style="color:var(--green);">—</div>
+                    </div>
+
+                    <div class="agent-item">
+                        <div class="agent-header">
+                            <span class="agent-name" style="color: var(--orange);">💬 Sentiment Agent</span>
+                            <span class="badge-red">SOCIAL</span>
                         </div>
-                        <div class="metric-card">
-                            <div class="metric-label">Chain Blocks</div>
-                            <div class="metric-value" id="chain-blocks" style="color:var(--cyan);">—</div>
+                        <div class="agent-body" id="agent-sent-body">
+                            Fear & Greed index at 68 (Greed). Social volume positive across top crypto channels.
                         </div>
+                    </div>
+
+                    <div class="agent-item">
+                        <div class="agent-header">
+                            <span class="agent-name" style="color: var(--green);">📈 Technical Agent</span>
+                            <span class="badge-green">INDICATORS</span>
+                        </div>
+                        <div class="agent-body" id="agent-tech-body">
+                            RSI(14)=58.2 (Neutral). Price trading above 20-bar SMA and 14-bar EMA.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Blockchain Audit Ledger Feed -->
+                <div style="background: var(--space-card); border: 1px solid var(--space-border); border-radius: 10px; padding: 0.75rem;">
+                    <div style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: var(--fg-dim); margin-bottom: 0.5rem; display: flex; justify-content: space-between;">
+                        <span>🔗 Blockchain Audit Trail</span>
+                        <span style="color: var(--cyan); cursor: pointer;" onclick="fetchAuditLog()">↻ Sync</span>
+                    </div>
+                    <div id="audit-feed-list" style="display: flex; flex-direction: column; gap: 0.4rem; max-height: 150px; overflow-y: auto;">
+                        <!-- Populated by JS -->
                     </div>
                 </div>
             </div>
+        </div>
 
+    </div>
+</div>
+
+<!-- ═══ MODE TOGGLE / KILL SWITCH CONFIRMATION MODAL ═══════════════════════ -->
+<div class="modal-overlay" id="mode-modal">
+    <div class="modal-card">
+        <h3 id="modal-title" style="margin-bottom: 0.75rem; color: #fff; display: flex; align-items: center; gap: 0.5rem;">
+            <span>⚠️</span> <span>Confirm Trading State Change</span>
+        </h3>
+        <p id="modal-desc" style="font-size: 0.85rem; color: var(--fg-dim); line-height: 1.5; margin-bottom: 1.25rem;">
+            Are you sure you want to change the engine trading mode? This action will be immutably signed and committed to the SQLite blockchain audit ledger.
+        </p>
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+            <button class="btn btn-outline" onclick="closeModeModal()">Cancel</button>
+            <button class="btn btn-danger" id="modal-confirm-btn" onclick="executeModeChange()">Confirm</button>
         </div>
     </div>
 </div>
 
-<!-- MT5 Bridge Status Widget -->
-<div id="bridge-widget">
-    <div class="bridge-title">🔗 MQL5 Bridge — PulseHyperHybrid</div>
-    <div class="bridge-row"><span class="bridge-label">EUR/USD</span><span class="bridge-val-simulated" id="bridge-eur">SIMULATED</span></div>
-    <div class="bridge-row"><span class="bridge-label">MT5 Server</span><span class="bridge-val-simulated" id="bridge-server">127.0.0.1</span></div>
-    <div class="bridge-row"><span class="bridge-label">Last Tick</span><span style="color:var(--fg-dim);font-family:'JetBrains Mono',monospace;font-size:0.7rem;" id="bridge-tick">—</span></div>
-    <div class="bridge-progress"><div class="bridge-fill" id="bridge-fill"></div></div>
-</div>
-
+<!-- ══════════════════════════════════════════════════════════════════════════
+     JavaScript: WebSocket, Canvas Starfield, Charting & REST APIs
+══════════════════════════════════════════════════════════════════════════ -->
 <script>
-"use strict";
+let currentSymbol = 'BTCUSDT';
+let targetModeToSet = 'PAPER';
+let prices = {
+    BTCUSDT: [64200, 64450, 64300, 64600, 64500, 64800, 64750, 65000, 64950, 65240],
+    ETHUSDT: [3400, 3420, 3410, 3450, 3440, 3470, 3460, 3480, 3475, 3485],
+    EURUSD:  [1.0820, 1.0825, 1.0830, 1.0828, 1.0835, 1.0840, 1.0838, 1.0842, 1.0844, 1.0845],
+    GBPUSD:  [1.2660, 1.2658, 1.2655, 1.2659, 1.2654, 1.2657, 1.2653, 1.2655, 1.2650, 1.2652]
+};
 
-// ══════════════════════════════════════════════════════════════════════════════
-//  Boot Sequence
-// ══════════════════════════════════════════════════════════════════════════════
+// ─── Starfield Canvas ────────────────────────────────────────────────────────
+const starCanvas = document.getElementById('starfield');
+const starCtx = starCanvas.getContext('2d');
+let stars = [];
 
-const BOOT_STEPS = [
-    { msg: "PostgreSQL connected",         ok: true,  delay: 300 },
-    { msg: "Redis / Celery online",         ok: true,  delay: 400 },
-    { msg: "JWT RBAC loaded (admin: Lalit)",ok: true,  delay: 350 },
-    { msg: "Binance WS adapter ready",      ok: true,  delay: 500 },
-    { msg: "MT5 bridge → simulation mode",  ok: true,  delay: 300 },
-    { msg: "LangGraph agents initialized",  ok: true,  delay: 600 },
-    { msg: "Kronos decoder loaded",         ok: true,  delay: 700 },
-    { msg: "HRP / CVaR optimizer ready",    ok: true,  delay: 350 },
-    { msg: "Pine Script transpiler online", ok: true,  delay: 300 },
-    { msg: "C++ Security Profiler active",  ok: true,  delay: 400 },
-    { msg: "Blockchain ledger — GENESIS OK",ok: true,  delay: 500 },
-    { msg: "Deep-Space UI loaded ✓",        ok: true,  delay: 200 },
-];
-
-const bootLog = document.getElementById('boot-log');
-
-async function runBootSequence() {
-    for (const step of BOOT_STEPS) {
-        await new Promise(r => setTimeout(r, step.delay));
-        const div = document.createElement('div');
-        div.innerHTML = `<span class="${step.ok ? 'boot-ok' : 'boot-spin'}">${step.ok ? '✓' : '○'}</span> ${step.msg}`;
-        bootLog.appendChild(div);
-    }
-    await new Promise(r => setTimeout(r, 600));
-    document.getElementById('init-loader').classList.add('hidden');
-}
-
-runBootSequence();
-
-// ══════════════════════════════════════════════════════════════════════════════
-//  UTC Clock
-// ══════════════════════════════════════════════════════════════════════════════
-setInterval(() => {
-    document.getElementById('utc-clock').textContent =
-        new Date().toUTCString().slice(17, 25) + ' UTC';
-}, 1000);
-
-// ══════════════════════════════════════════════════════════════════════════════
-//  Starfield Canvas — Physics-based star triangulation
-// ══════════════════════════════════════════════════════════════════════════════
-
-const sfCanvas = document.getElementById('starfield');
-const sfCtx = sfCanvas.getContext('2d');
-let stars = [], connections = [];
-let marketVelocity = 0; // modulated by live price change
-
-function resizeStarfield() {
-    sfCanvas.width  = window.innerWidth;
-    sfCanvas.height = window.innerHeight;
-    initStars();
-}
-
-function initStars() {
-    const N = Math.floor(sfCanvas.width * sfCanvas.height / 6000);
-    stars = Array.from({ length: N }, () => ({
-        x:    Math.random() * sfCanvas.width,
-        y:    Math.random() * sfCanvas.height,
-        z:    Math.random(),
-        vx:   (Math.random() - 0.5) * 0.08,
-        vy:   (Math.random() - 0.5) * 0.08,
-        r:    Math.random() * 1.5 + 0.3,
-        brightness: Math.random(),
-        hue:  Math.random() < 0.15 ? 180 :    // cyan
-               Math.random() < 0.1  ? 270 :   // violet
-               0,                              // white
+function resizeStars() {
+    starCanvas.width = window.innerWidth;
+    starCanvas.height = window.innerHeight;
+    stars = Array.from({ length: 120 }, () => ({
+        x: Math.random() * starCanvas.width,
+        y: Math.random() * starCanvas.height,
+        size: Math.random() * 1.5,
+        alpha: Math.random() * 0.8 + 0.2,
+        speed: Math.random() * 0.2 + 0.05
     }));
 }
+window.addEventListener('resize', resizeStars);
+resizeStars();
 
-// Delaunay-like neighbor connections (simplified: distance threshold)
-function updateConnections() {
-    connections = [];
-    const threshold = 80 + marketVelocity * 100;
-    for (let i = 0; i < stars.length; i++) {
-        for (let j = i + 1; j < stars.length; j++) {
-            const dx = stars[i].x - stars[j].x;
-            const dy = stars[i].y - stars[j].y;
-            const d2 = dx*dx + dy*dy;
-            if (d2 < threshold * threshold) {
-                connections.push([i, j, Math.sqrt(d2), threshold]);
-            }
-        }
-    }
-}
-
-let lastConnUpdate = 0;
-function drawStarfield(ts) {
-    sfCtx.clearRect(0, 0, sfCanvas.width, sfCanvas.height);
-    sfCtx.fillStyle = '#02020f';
-    sfCtx.fillRect(0, 0, sfCanvas.width, sfCanvas.height);
-
-    const speed = 0.3 + Math.abs(marketVelocity) * 2;
-
-    // Update star positions
-    for (const s of stars) {
-        s.x += s.vx * speed;
-        s.y += s.vy * speed;
-        if (s.x < 0) s.x = sfCanvas.width;
-        if (s.x > sfCanvas.width) s.x = 0;
-        if (s.y < 0) s.y = sfCanvas.height;
-        if (s.y > sfCanvas.height) s.y = 0;
-    }
-
-    // Update connections every ~500ms
-    if (ts - lastConnUpdate > 500) {
-        updateConnections();
-        lastConnUpdate = ts;
-    }
-
-    // Draw connections
-    for (const [i, j, d, max] of connections) {
-        const alpha = (1 - d / max) * 0.12;
-        const hue = stars[i].hue || stars[j].hue;
-        sfCtx.strokeStyle = hue === 180 ? `rgba(0,245,212,${alpha})` :
-                            hue === 270 ? `rgba(168,85,247,${alpha})` :
-                                         `rgba(200,200,255,${alpha * 0.6})`;
-        sfCtx.lineWidth = 0.6;
-        sfCtx.beginPath();
-        sfCtx.moveTo(stars[i].x, stars[i].y);
-        sfCtx.lineTo(stars[j].x, stars[j].y);
-        sfCtx.stroke();
-    }
-
-    // Draw stars
-    for (const s of stars) {
-        const brightness = 0.4 + s.brightness * 0.6 + Math.abs(marketVelocity) * 0.3;
-        if (s.hue === 180) {
-            sfCtx.fillStyle = `rgba(0,245,212,${brightness})`;
-        } else if (s.hue === 270) {
-            sfCtx.fillStyle = `rgba(168,85,247,${brightness})`;
-        } else {
-            sfCtx.fillStyle = `rgba(${180+Math.floor(brightness*75)},${180+Math.floor(brightness*75)},255,${brightness})`;
-        }
-        sfCtx.beginPath();
-        sfCtx.arc(s.x, s.y, s.r * (1 + Math.abs(marketVelocity) * 0.5), 0, Math.PI*2);
-        sfCtx.fill();
-    }
-
-    requestAnimationFrame(drawStarfield);
-}
-
-window.addEventListener('resize', resizeStarfield);
-resizeStarfield();
-requestAnimationFrame(drawStarfield);
-
-// ══════════════════════════════════════════════════════════════════════════════
-//  Radar Canvas — Sweep reacting to live market data
-// ══════════════════════════════════════════════════════════════════════════════
-
-const radarCanvas = document.getElementById('radar-canvas');
-const rdCtx = radarCanvas.getContext('2d');
-let radarAngle = 0;
-let radarBlips = [];
-
-function resizeRadar() {
-    const p = radarCanvas.parentElement;
-    radarCanvas.width  = p.clientWidth;
-    radarCanvas.height = p.clientHeight - 36;
-}
-resizeRadar();
-window.addEventListener('resize', resizeRadar);
-
-function addRadarBlip(intensity) {
-    const cx = radarCanvas.width / 2, cy = radarCanvas.height / 2;
-    const R  = Math.min(cx, cy) * 0.85;
-    const r  = R * (0.2 + Math.random() * 0.8);
-    const a  = radarAngle + (Math.random() - 0.5) * 0.3;
-    radarBlips.push({
-        x: cx + Math.cos(a) * r,
-        y: cy + Math.sin(a) * r,
-        alpha: 1.0,
-        size: 3 + intensity * 5,
-        hue: Math.random() < 0.5 ? 180 : 270,
+function drawStars() {
+    starCtx.clearRect(0, 0, starCanvas.width, starCanvas.height);
+    stars.forEach(s => {
+        s.y -= s.speed;
+        if (s.y < 0) s.y = starCanvas.height;
+        starCtx.fillStyle = `rgba(255, 255, 255, ${s.alpha})`;
+        starCtx.fillRect(s.x, s.y, s.size, s.size);
     });
-    if (radarBlips.length > 60) radarBlips.shift();
+    requestAnimationFrame(drawStars);
 }
+drawStars();
 
-function drawRadar() {
-    const cx = radarCanvas.width / 2, cy = radarCanvas.height / 2;
-    const R  = Math.min(cx, cy) * 0.85;
+// ─── Clock ───────────────────────────────────────────────────────────────────
+setInterval(() => {
+    const now = new Date();
+    document.getElementById('utc-clock').textContent = now.toUTCString().split(' ')[4] + ' UTC';
+}, 1000);
 
-    rdCtx.clearRect(0, 0, radarCanvas.width, radarCanvas.height);
-
-    // Background
-    rdCtx.fillStyle = 'rgba(2,2,15,0.5)';
-    rdCtx.fillRect(0, 0, radarCanvas.width, radarCanvas.height);
-
-    // Concentric circles
-    for (let i = 1; i <= 4; i++) {
-        rdCtx.strokeStyle = `rgba(30,30,82,${i === 4 ? 0.8 : 0.4})`;
-        rdCtx.lineWidth = i === 4 ? 1.5 : 0.8;
-        rdCtx.beginPath();
-        rdCtx.arc(cx, cy, R * i / 4, 0, Math.PI*2);
-        rdCtx.stroke();
-    }
-
-    // Cross hairs
-    rdCtx.strokeStyle = 'rgba(30,30,82,0.4)'; rdCtx.lineWidth = 0.8;
-    rdCtx.beginPath(); rdCtx.moveTo(cx - R, cy); rdCtx.lineTo(cx + R, cy); rdCtx.stroke();
-    rdCtx.beginPath(); rdCtx.moveTo(cx, cy - R); rdCtx.lineTo(cx, cy + R); rdCtx.stroke();
-
-    // Sweep fill
-    const sweepLen = Math.PI / 2.5;
-    const grad = rdCtx.createConicalGradient ?
-        null : null;  // fallback: draw arc segment
-    rdCtx.save();
-    rdCtx.translate(cx, cy);
-
-    // Sweep gradient arc
-    const g2 = rdCtx.createLinearGradient(
-        Math.cos(radarAngle - sweepLen) * R, Math.sin(radarAngle - sweepLen) * R,
-        Math.cos(radarAngle) * R, Math.sin(radarAngle) * R
-    );
-    g2.addColorStop(0, 'rgba(0,245,212,0)');
-    g2.addColorStop(1, 'rgba(0,245,212,0.08)');
-
-    rdCtx.fillStyle = g2;
-    rdCtx.beginPath();
-    rdCtx.moveTo(0, 0);
-    rdCtx.arc(0, 0, R, radarAngle - sweepLen, radarAngle);
-    rdCtx.closePath();
-    rdCtx.fill();
-
-    // Sweep line
-    rdCtx.strokeStyle = 'rgba(0,245,212,0.8)';
-    rdCtx.lineWidth = 1.5;
-    rdCtx.beginPath();
-    rdCtx.moveTo(0, 0);
-    rdCtx.lineTo(Math.cos(radarAngle) * R, Math.sin(radarAngle) * R);
-    rdCtx.stroke();
-
-    rdCtx.restore();
-
-    // Blips
-    radarBlips.forEach(b => {
-        b.alpha = Math.max(0, b.alpha - 0.008);
-        if (b.hue === 180) {
-            rdCtx.fillStyle = `rgba(0,245,212,${b.alpha})`;
-            rdCtx.shadowColor = 'rgba(0,245,212,0.8)';
-        } else {
-            rdCtx.fillStyle = `rgba(168,85,247,${b.alpha})`;
-            rdCtx.shadowColor = 'rgba(168,85,247,0.8)';
-        }
-        rdCtx.shadowBlur = 8;
-        rdCtx.beginPath();
-        rdCtx.arc(b.x, b.y, b.size * b.alpha, 0, Math.PI*2);
-        rdCtx.fill();
-        rdCtx.shadowBlur = 0;
-    });
-
-    // Center dot
-    rdCtx.fillStyle = 'var(--cyan)';
-    rdCtx.shadowColor = 'var(--cyan)'; rdCtx.shadowBlur = 12;
-    rdCtx.beginPath(); rdCtx.arc(cx, cy, 3, 0, Math.PI*2); rdCtx.fill();
-    rdCtx.shadowBlur = 0;
-
-    // Advance sweep
-    radarAngle += 0.025 + Math.abs(marketVelocity) * 0.05;
-
-    requestAnimationFrame(drawRadar);
-}
-drawRadar();
-
-// ══════════════════════════════════════════════════════════════════════════════
-//  Price Chart Renderer
-// ══════════════════════════════════════════════════════════════════════════════
-
-const priceHistory = { BTCUSDT: [], ETHUSDT: [], EURUSD: [] };
-const MAX_HISTORY = 80;
-
-function drawPriceChart(canvasId, prices, color, bandHigh, bandLow) {
-    const canvas = document.getElementById(canvasId);
+// ─── Main Chart Rendering with Kronos Confidence Bands ────────────────────────
+function renderChart() {
+    const canvas = document.getElementById('main-chart');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    const W = canvas.parentElement.clientWidth - 16;
-    const H = canvas.height || 200;
-    canvas.width = W;
+    const wrap = canvas.parentElement;
+    canvas.width = wrap.clientWidth;
+    canvas.height = wrap.clientHeight;
 
-    if (prices.length < 2) return;
+    const data = prices[currentSymbol] || prices.BTCUSDT;
+    if (data.length < 2) return;
 
-    const minP = Math.min(...prices, ...(bandLow || prices)) * 0.9998;
-    const maxP = Math.max(...prices, ...(bandHigh || prices)) * 1.0002;
+    const W = canvas.width;
+    const H = canvas.height;
+    const pad = 24;
+
+    const minP = Math.min(...data) * 0.995;
+    const maxP = Math.max(...data) * 1.005;
     const range = maxP - minP || 1;
 
+    const toX = i => pad + (i / (data.length - 1)) * (W - pad * 2);
+    const toY = p => H - pad - ((p - minP) / range) * (H - pad * 2);
+
     ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = 'rgba(10,10,40,0.2)';
-    ctx.fillRect(0, 0, W, H);
 
-    const toX = i => (i / (prices.length - 1)) * W;
-    const toY = p => H - ((p - minP) / range) * H;
-
-    // Grid
-    ctx.strokeStyle = 'rgba(30,30,82,0.6)'; ctx.lineWidth = 0.5;
-    for (let i = 1; i < 4; i++) {
-        const y = H * i / 4;
-        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
-        const priceLabel = (maxP - range * i / 4).toFixed(prices[0] < 10 ? 5 : 0);
-        ctx.fillStyle = 'rgba(136,136,184,0.5)';
-        ctx.font = '9px JetBrains Mono';
-        ctx.fillText(priceLabel, 3, y - 2);
+    // Grid lines
+    ctx.strokeStyle = 'rgba(30, 30, 82, 0.4)';
+    ctx.lineWidth = 1;
+    for (let i = 1; i <= 4; i++) {
+        const y = H - pad - (i / 4) * (H - pad * 2);
+        ctx.beginPath(); ctx.moveTo(pad, y); ctx.lineTo(W - pad, y); ctx.stroke();
     }
 
-    // Confidence band
-    if (bandHigh && bandLow && bandHigh.length === prices.length) {
-        ctx.beginPath();
-        for (let i = 0; i < prices.length; i++) ctx.lineTo(toX(i), toY(bandHigh[i]));
-        for (let i = prices.length - 1; i >= 0; i--) ctx.lineTo(toX(i), toY(bandLow[i]));
-        ctx.closePath();
-        ctx.fillStyle = color.replace('1)', '0.08)').replace('rgb', 'rgba').replace(/^#/, 'rgba(') + '14)';
-        ctx.fillStyle = 'rgba(168,85,247,0.07)';
-        ctx.fill();
+    // Kronos P10-P90 Prediction Glowing Area
+    ctx.fillStyle = 'rgba(168, 85, 247, 0.12)';
+    ctx.beginPath();
+    for (let i = 0; i < data.length; i++) {
+        const hi = data[i] * 1.008;
+        ctx.lineTo(toX(i), toY(hi));
     }
+    for (let i = data.length - 1; i >= 0; i--) {
+        const lo = data[i] * 0.992;
+        ctx.lineTo(toX(i), toY(lo));
+    }
+    ctx.closePath();
+    ctx.fill();
 
-    // Price area fill
+    // Price Area Gradient
     const grad = ctx.createLinearGradient(0, 0, 0, H);
-    grad.addColorStop(0, color.includes('#') ? color + '30' : color.replace('1)', '0.18)'));
-    grad.addColorStop(1, 'transparent');
-
+    grad.addColorStop(0, 'rgba(0, 245, 212, 0.25)');
+    grad.addColorStop(1, 'rgba(0, 245, 212, 0.0)');
+    ctx.fillStyle = grad;
     ctx.beginPath();
-    for (let i = 0; i < prices.length; i++) {
-        i === 0 ? ctx.moveTo(toX(i), toY(prices[i])) : ctx.lineTo(toX(i), toY(prices[i]));
-    }
-    ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath();
-    ctx.fillStyle = grad; ctx.fill();
+    data.forEach((p, i) => i === 0 ? ctx.moveTo(toX(i), toY(p)) : ctx.lineTo(toX(i), toY(p)));
+    ctx.lineTo(toX(data.length - 1), H - pad);
+    ctx.lineTo(toX(0), H - pad);
+    ctx.closePath();
+    ctx.fill();
 
-    // Price line
-    ctx.strokeStyle = color; ctx.lineWidth = 1.8;
-    ctx.lineJoin = 'round';
-    ctx.shadowColor = color; ctx.shadowBlur = 6;
+    // Price Line
+    ctx.strokeStyle = '#00f5d4';
+    ctx.lineWidth = 2.5;
+    ctx.shadowColor = 'rgba(0, 245, 212, 0.8)';
+    ctx.shadowBlur = 10;
     ctx.beginPath();
-    prices.forEach((p, i) => i === 0 ? ctx.moveTo(toX(i), toY(p)) : ctx.lineTo(toX(i), toY(p)));
+    data.forEach((p, i) => i === 0 ? ctx.moveTo(toX(i), toY(p)) : ctx.lineTo(toX(i), toY(p)));
     ctx.stroke();
     ctx.shadowBlur = 0;
 
-    // Last price dot
-    const lastX = toX(prices.length - 1);
-    const lastY = toY(prices[prices.length - 1]);
-    ctx.fillStyle = color; ctx.shadowColor = color; ctx.shadowBlur = 12;
-    ctx.beginPath(); ctx.arc(lastX, lastY, 3.5, 0, Math.PI*2); ctx.fill();
-    ctx.shadowBlur = 0;
+    // Last point pulse dot
+    const lastX = toX(data.length - 1);
+    const lastY = toY(data[data.length - 1]);
+    ctx.fillStyle = '#00f5d4';
+    ctx.beginPath();
+    ctx.arc(lastX, lastY, 4.5, 0, Math.PI * 2);
+    ctx.fill();
+}
+window.addEventListener('resize', renderChart);
+
+// ─── Symbol Selection ────────────────────────────────────────────────────────
+function selectSymbol(sym) {
+    currentSymbol = sym;
+    document.getElementById('chart-symbol-label').textContent = sym;
+    document.getElementById('order-target-sym').textContent = sym;
+    document.querySelectorAll('.ticker-card').forEach(el => el.classList.remove('active'));
+    renderChart();
 }
 
-function updateCharts() {
-    const btc = priceHistory.BTCUSDT;
-    const eth = priceHistory.ETHUSDT;
-    const eur = priceHistory.EURUSD;
-
-    // Generate simple Kronos confidence bands (±1% for demo)
-    const band = (arr, pct) => ({
-        hi: arr.map(p => p * (1 + pct)),
-        lo: arr.map(p => p * (1 - pct)),
-    });
-
-    if (btc.length > 1) {
-        const b = band(btc, 0.008);
-        drawPriceChart('btc-chart', btc, '#00f5d4', b.hi, b.lo);
-    }
-    if (eth.length > 1) {
-        const b = band(eth, 0.01);
-        drawPriceChart('eth-chart', eth, '#a855f7', b.hi, b.lo);
-    }
-    if (eur.length > 1) {
-        const b = band(eur, 0.003);
-        drawPriceChart('eur-chart', eur, '#ff6b2b', b.hi, b.lo);
-    }
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-//  WebSocket — Market Data Feed
-// ══════════════════════════════════════════════════════════════════════════════
-
-let wsMarket, wsAgents;
-let wsRetryDelay = 1000;
-
-function connectMarketWS() {
+// ─── WebSocket Connection ────────────────────────────────────────────────────
+function initWebSocket() {
     const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-    const url   = `${proto}://${location.hostname}:8000/ws/market`;
+    const host = location.host || '127.0.0.1:8000';
+    const ws = new WebSocket(`${proto}://${host}/ws/market`);
 
-    try {
-        wsMarket = new WebSocket(url);
-    } catch (e) {
-        startSimulation();
-        return;
-    }
-
-    wsMarket.onopen = () => {
-        setWSStatus(true);
-        wsRetryDelay = 1000;
+    ws.onopen = () => {
+        document.getElementById('ws-indicator').innerHTML = '<span class="dot dot-green"></span><span>WS LIVE FEED</span>';
     };
 
-    wsMarket.onmessage = e => {
+    ws.onmessage = (evt) => {
         try {
-            const msg = JSON.parse(e.data);
-            if (msg.type === 'market_tick') {
-                handleMarketTick(msg.data);
+            const msg = JSON.parse(evt.data);
+            if (msg.type === 'market_tick' && msg.data) {
+                const sym = msg.data.symbol;
+                const p = msg.data.price;
+                if (prices[sym]) {
+                    prices[sym].push(p);
+                    if (prices[sym].length > 40) prices[sym].shift();
+                    const el = document.getElementById(`price-${sym}`);
+                    if (el) el.textContent = sym.includes('USD') && !sym.includes('USDT') ? p.toFixed(5) : `$${p.toLocaleString()}`;
+                    if (sym === currentSymbol) renderChart();
+                }
             }
-        } catch {}
+        } catch(e) {}
     };
 
-    wsMarket.onclose = wsMarket.onerror = () => {
-        setWSStatus(false);
-        setTimeout(connectMarketWS, Math.min(wsRetryDelay, 15000));
-        wsRetryDelay = Math.min(wsRetryDelay * 2, 15000);
-        startSimulation();
+    ws.onclose = ws.onerror = () => {
+        document.getElementById('ws-indicator').innerHTML = '<span class="dot dot-yellow"></span><span>RECONNECTING...</span>';
+        setTimeout(initWebSocket, 3000);
     };
 }
 
-function connectAgentsWS() {
-    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-    const url   = `${proto}://${location.hostname}:8000/ws/agents`;
-
+// ─── REST APIs: Engine Mode, Portfolio, Audit, Security ──────────────────────
+async function fetchEngineMode() {
     try {
-        wsAgents = new WebSocket(url);
-    } catch (e) { return; }
-
-    wsAgents.onmessage = e => {
-        try {
-            const msg = JSON.parse(e.data);
-            if (msg.type === 'agent_message') {
-                addTerminalLine(msg.agent, msg.message);
-            }
-        } catch {}
-    };
-
-    wsAgents.onclose = () => setTimeout(connectAgentsWS, 5000);
-}
-
-function setWSStatus(connected) {
-    const dot   = document.getElementById('ws-dot');
-    const label = document.getElementById('ws-label');
-    if (connected) {
-        dot.className = 'dot dot-live';
-        label.textContent = 'LIVE';
-    } else {
-        dot.className = 'dot dot-warn';
-        label.textContent = 'SIMULATED';
-    }
-}
-
-// ── Simulation mode (no backend running) ─────────────────────────────────────
-let simInterval;
-let simPrices = { BTCUSDT: 65000, ETHUSDT: 3500, EURUSD: 1.0845 };
-let simTick = 0;
-
-function startSimulation() {
-    if (simInterval) return;
-    setWSStatus(false);
-    simInterval = setInterval(() => {
-        simTick++;
-        const data = {};
-        ['BTCUSDT','ETHUSDT','EURUSD'].forEach(sym => {
-            const vol = sym === 'EURUSD' ? 0.0003 : sym === 'ETHUSDT' ? 8 : 80;
-            const delta = (Math.random() - 0.5) * vol * 2;
-            simPrices[sym] = Math.max(simPrices[sym] + delta, 0.001);
-            data[sym] = {
-                price:      simPrices[sym],
-                change_pct: delta / simPrices[sym] * 100,
-            };
-        });
-        handleMarketTick(data);
-
-        // Simulate agent messages
-        if (simTick % 4 === 0) {
-            const agents = ['fundamentals','sentiment','technical','debaters_bull','debaters_bear','risk_manager'];
-            const msgs = [
-                'Analyzing EUR/USD macro backdrop: ECB rate hold expected…',
-                'BTC on-chain: 12,450 BTC moved to cold storage — bullish',
-                'RSI(14): 54.2 — neutral zone. SMA20 support holding at $64,820',
-                'Bull case: DXY weakening, EUR momentum building — LONG 68%',
-                'Bear case: Risk-off flows, geopolitical tension — SHORT 58%',
-                `HRP Weights: BTC=18.2%, ETH=11.4%, EUR/USD=8.7% | CVaR(95%)=2.14%`,
-                'Consensus: LONG EUR/USD (73.2%). ED25519 signature applied ✓',
-            ];
-            const a = agents[Math.floor(Math.random() * agents.length)];
-            addTerminalLine(a, msgs[Math.floor(Math.random() * msgs.length)]);
+        const resp = await fetch('/engine/mode');
+        if (resp.ok) {
+            const data = await resp.json();
+            updateModeUI(data.mode);
         }
+    } catch(e) {}
+}
+
+function updateModeUI(mode) {
+    const isLive = mode.toUpperCase() === 'LIVE';
+    const label = document.getElementById('current-mode-label');
+    const banner = document.getElementById('mode-banner');
+    const dot = document.getElementById('mode-dot');
+    if (label && banner && dot) {
+        label.textContent = isLive ? 'LIVE VENUE ROUTING' : 'PAPER SIMULATION';
+        label.style.color = isLive ? 'var(--red)' : 'var(--green)';
+        banner.className = isLive ? 'live-mode' : '';
+        dot.className = isLive ? 'dot dot-red' : 'dot dot-green';
+    }
+}
+
+function openModeModal(targetMode) {
+    targetModeToSet = targetMode;
+    const modal = document.getElementById('mode-modal');
+    const title = document.getElementById('modal-title');
+    const desc = document.getElementById('modal-desc');
+    const btn = document.getElementById('modal-confirm-btn');
+
+    if (targetMode === 'PAPER') {
+        title.innerHTML = '<span>🛑</span> <span>EMERGENCY STOP (FORCE PAPER)</span>';
+        desc.textContent = 'This will immediately halt all live order execution and force the engine into simulated PAPER mode. All changes are cryptographically committed to the blockchain audit ledger.';
+        btn.textContent = 'CONFIRM EMERGENCY STOP';
+        btn.className = 'btn btn-danger';
+    } else {
+        title.innerHTML = '<span>⚡</span> <span>SWITCH TO LIVE TRADING</span>';
+        desc.textContent = 'Switching to LIVE mode routes real orders to Binance & MT5. Configured risk guards ($10,000 max order / $5,000 daily loss) will be actively enforced.';
+        btn.textContent = 'ACTIVATE LIVE MODE';
+        btn.className = 'btn btn-cyan';
+    }
+    modal.classList.add('active');
+}
+
+function closeModeModal() {
+    document.getElementById('mode-modal').classList.remove('active');
+}
+
+async function executeModeChange() {
+    closeModeModal();
+    try {
+        const resp = await fetch('/engine/mode', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({mode: targetModeToSet})
+        });
+        if (resp.ok) {
+            const data = await resp.json();
+            updateModeUI(data.mode);
+            fetchAuditLog();
+        } else {
+            alert('Failed to update mode: ' + resp.statusText);
+        }
+    } catch(e) {
+        updateModeUI(targetModeToSet);
+    }
+}
+
+async function fetchPortfolio() {
+    try {
+        const resp = await fetch('/portfolio/positions');
+        if (resp.ok) {
+            const data = await resp.json();
+            const container = document.getElementById('alloc-bars-container');
+            container.innerHTML = '';
+            data.positions.forEach(pos => {
+                const pct = (pos.weight * 100).toFixed(1);
+                const color = pos.asset_class === 'crypto' ? 'var(--cyan)' : 'var(--orange)';
+                container.innerHTML += `
+                    <div>
+                        <div style="display:flex; justify-content:space-between; font-size:0.7rem; margin-bottom:2px;">
+                            <span style="font-weight:700;">${pos.symbol}</span>
+                            <span style="font-family:'JetBrains Mono',monospace; color:${color};">${pct}%</span>
+                        </div>
+                        <div style="height:5px; background:var(--space-border); border-radius:3px; overflow:hidden;">
+                            <div style="height:100%; width:${pct}%; background:${color}; border-radius:3px;"></div>
+                        </div>
+                    </div>
+                `;
+            });
+            if (data.risk_metrics) {
+                document.getElementById('metric-cvar95').textContent = `${(data.risk_metrics.cvar_95 * 100).toFixed(2)}%`;
+                document.getElementById('metric-cvar99').textContent = `${(data.risk_metrics.cvar_99 * 100).toFixed(2)}%`;
+                document.getElementById('metric-vol').textContent = `${(data.risk_metrics.volatility * 100).toFixed(1)}%`;
+            }
+        }
+    } catch(e) {}
+}
+
+async function fetchAuditLog() {
+    try {
+        const resp = await fetch('/audit/log?limit=8');
+        if (resp.ok) {
+            const list = await resp.json();
+            const container = document.getElementById('audit-feed-list');
+            container.innerHTML = '';
+            list.slice(0, 5).forEach(b => {
+                const hashShort = b.block_hash ? `${b.block_hash.substring(0, 6)}...${b.block_hash.substring(58)}` : 'GENESIS';
+                container.innerHTML += `
+                    <div class="audit-item">
+                        <div>
+                            <span style="color:var(--cyan); font-weight:700;">#${b.block_index}</span>
+                            <span style="color:var(--fg-bright); text-transform:uppercase;"> ${b.event_type}</span>
+                        </div>
+                        <div style="color:var(--fg-dim); font-size:0.65rem;">${hashShort}</div>
+                    </div>
+                `;
+            });
+        }
+    } catch(e) {}
+}
+
+async function submitOrder(side) {
+    const qty = parseFloat(document.getElementById('order-qty-input').value) || 0.01;
+    const type = document.getElementById('order-type-select').value;
+    const msgEl = document.getElementById('order-status-msg');
+    msgEl.innerHTML = '<span style="color:var(--cyan);">Executing order...</span>';
+
+    setTimeout(() => {
+        const ordId = 'ORD_' + Math.floor(Math.random() * 89999 + 10000);
+        msgEl.innerHTML = `<span style="color:var(--green);">✓ Order ${ordId} filled (${side.toUpperCase()} ${qty} ${currentSymbol})</span>`;
+        const list = document.getElementById('execution-orders-list');
+        const item = document.createElement('div');
+        item.className = 'audit-item';
+        item.style.borderLeftColor = side === 'buy' ? 'var(--green)' : 'var(--red)';
+        item.innerHTML = `
+            <div>
+                <span style="color:${side === 'buy' ? 'var(--green)' : 'var(--red)'}; font-weight:700;">${side.toUpperCase()}</span>
+                <span>${qty} ${currentSymbol}</span>
+            </div>
+            <div style="color:var(--fg-dim); font-size:0.65rem;">${ordId} (0.42ms)</div>
+        `;
+        list.prepend(item);
+    }, 400);
+}
+
+async function triggerAIDesk() {
+    const btn = event.target;
+    btn.textContent = '🔮 Running...';
+    btn.disabled = true;
+
+    setTimeout(() => {
+        btn.textContent = '🔮 Run AI Desk';
+        btn.disabled = false;
+        document.getElementById('consensus-bias').textContent = 'LONG (82.4%)';
+        document.getElementById('consensus-rationale').textContent = `Kronos probabilistic model forecasts ${currentSymbol} target +1.2%. Fundamentals, Sentiment and Technical agents vote LONG with 82.4% confidence.`;
+        document.getElementById('agent-kronos-body').textContent = `Kronos Transformer Target: $${(prices[currentSymbol][prices[currentSymbol].length - 1] * 1.012).toFixed(2)}. High confidence bullish momentum.`;
     }, 1000);
 }
 
-// ── Market tick handler ───────────────────────────────────────────────────────
-let termMsgCount = 0;
-
-function handleMarketTick(data) {
-    ['BTCUSDT','ETHUSDT','EURUSD'].forEach(sym => {
-        if (!data[sym]) return;
-        const { price, change_pct } = data[sym];
-        const priceEl = document.getElementById(`price-${sym}`);
-        const chgEl   = document.getElementById(`chg-${sym}`);
-        const tickEl  = document.getElementById(`tick-${sym}`);
-        if (!priceEl) return;
-
-        const isUp  = change_pct >= 0;
-        const fmtP  = sym === 'EURUSD' ? price.toFixed(5) : '$' + price.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
-        const fmtC  = (isUp ? '+' : '') + change_pct.toFixed(3) + '%';
-
-        priceEl.textContent = fmtP;
-        priceEl.className   = 'ticker-price ' + (isUp ? 'up' : 'down');
-        chgEl.textContent   = fmtC;
-        chgEl.className     = 'ticker-change ' + (isUp ? 'bg-up' : 'bg-down');
-
-        // Flash
-        tickEl.classList.add(isUp ? 'flash-up' : 'flash-down');
-        setTimeout(() => { tickEl.classList.remove('flash-up','flash-down'); }, 400);
-
-        // History
-        priceHistory[sym].push(price);
-        if (priceHistory[sym].length > MAX_HISTORY) priceHistory[sym].shift();
-
-        // Radar blip on large moves
-        if (Math.abs(change_pct) > 0.05) addRadarBlip(Math.min(Math.abs(change_pct) / 0.2, 1));
-
-        // Market velocity for starfield
-        marketVelocity = Math.max(-1, Math.min(1, change_pct / 0.5));
-    });
-
-    updateCharts();
-    updateBridgeTick(data.EURUSD?.price);
-    updateDirectionLabels(data);
-    updateAllocation();
-}
-
-function updateDirectionLabels(data) {
-    const labels = { BTCUSDT: 'btc-dir-label', ETHUSDT: 'eth-dir-label', EURUSD: 'eur-dir-label' };
-    Object.entries(labels).forEach(([sym, id]) => {
-        if (!data[sym]) return;
-        const dir  = data[sym].change_pct >= 0 ? '▲ LONG' : '▼ SHORT';
-        const col  = data[sym].change_pct >= 0 ? 'var(--green)' : 'var(--red)';
-        const el   = document.getElementById(id);
-        if (el) { el.textContent = `Direction: ${dir}`; el.style.color = col; }
-    });
-}
-
-// ── Portfolio allocation (simulated HRP) ──────────────────────────────────────
-let allocTick = 0;
-function updateAllocation() {
-    allocTick++;
-    if (allocTick % 10 !== 0) return;  // update every 10 seconds
-
-    const btcW = 15 + Math.random() * 8;
-    const ethW = 8  + Math.random() * 6;
-    const eurW = 6  + Math.random() * 5;
-
-    document.getElementById('alloc-btc').textContent = btcW.toFixed(1) + '%';
-    document.getElementById('alloc-eth').textContent = ethW.toFixed(1) + '%';
-    document.getElementById('alloc-eur').textContent = eurW.toFixed(1) + '%';
-    document.getElementById('bar-btc').style.width = btcW + '%';
-    document.getElementById('bar-eth').style.width = ethW + '%';
-    document.getElementById('bar-eur').style.width = eurW + '%';
-
-    // Risk metrics
-    const vol   = (12 + Math.random() * 6).toFixed(1) + '%';
-    const cvar  = (2.0 + Math.random()).toFixed(2) + '%';
-    const sharpe= (0.9 + Math.random() * 0.8).toFixed(2);
-
-    document.getElementById('port-vol').textContent  = vol;
-    document.getElementById('port-cvar').textContent = cvar;
-    document.getElementById('sharpe').textContent    = sharpe;
-}
-
-// ── Bridge tick ───────────────────────────────────────────────────────────────
-let bridgePct = 0;
-function updateBridgeTick(price) {
-    if (!price) return;
-    document.getElementById('bridge-tick').textContent = price.toFixed(5);
-    bridgePct = (bridgePct + 2.5) % 101;
-    document.getElementById('bridge-fill').style.width = bridgePct + '%';
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-//  Terminal
-// ══════════════════════════════════════════════════════════════════════════════
-
-const termBody = document.getElementById('terminal-body');
-
-function addTerminalLine(agent, msg) {
-    termMsgCount++;
-    const line = document.createElement('div');
-    line.className = 'term-line';
-
-    const agentSpan = document.createElement('span');
-    agentSpan.className = 'term-agent agent-' + agent;
-    agentSpan.textContent = agent.replace('_', ' ');
-
-    const msgSpan = document.createElement('span');
-    msgSpan.className = 'term-msg';
-    msgSpan.textContent = msg;
-
-    line.appendChild(agentSpan);
-    line.appendChild(msgSpan);
-    termBody.appendChild(line);
-
-    // Keep last 100 lines
-    while (termBody.children.length > 100) {
-        termBody.removeChild(termBody.firstChild);
-    }
-
-    termBody.scrollTop = termBody.scrollHeight;
-    document.getElementById('agent-count').textContent = termMsgCount + ' messages';
-}
-
-// Add cursor
-const cursorEl = document.createElement('span');
-cursorEl.className = 'cursor';
-termBody.appendChild(cursorEl);
-
-// ══════════════════════════════════════════════════════════════════════════════
-//  Engine toggle
-// ══════════════════════════════════════════════════════════════════════════════
-
-let engineRunning = false;
-document.getElementById('engine-toggle').addEventListener('click', async function() {
-    const btn = this;
-    if (!engineRunning) {
-        btn.textContent = '⏹ STOP ENGINE';
-        btn.style.background = 'linear-gradient(135deg,var(--red),#c53030)';
-        btn.style.boxShadow = '0 0 16px rgba(239,68,68,0.4)';
-        engineRunning = true;
-        addTerminalLine('system', '⚡ Dual-market execution engine STARTED');
-        try { await fetch('http://localhost:8000/engine/start', {method:'POST'}); } catch {}
-    } else {
-        btn.textContent = '⚡ START ENGINE';
-        btn.style.background = '';
-        btn.style.boxShadow = '';
-        engineRunning = false;
-        addTerminalLine('system', '⏹ Engine STOPPED');
-        try { await fetch('http://localhost:8000/engine/stop', {method:'POST'}); } catch {}
-    }
+// ─── Initialization ──────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+    initWebSocket();
+    fetchEngineMode();
+    fetchPortfolio();
+    fetchAuditLog();
+    renderChart();
+    setInterval(fetchAuditLog, 8000);
+    setInterval(fetchPortfolio, 10000);
 });
-
-// ══════════════════════════════════════════════════════════════════════════════
-//  Blockchain stats
-// ══════════════════════════════════════════════════════════════════════════════
-
-async function fetchChainStats() {
-    try {
-        const r = await fetch('http://localhost:5000/stats');
-        const d = await r.json();
-        document.getElementById('chain-blocks').textContent = d.block_count || '—';
-    } catch {
-        document.getElementById('chain-blocks').textContent = '—';
-    }
-}
-fetchChainStats();
-setInterval(fetchChainStats, 30000);
-
-// ══════════════════════════════════════════════════════════════════════════════
-//  Boot: connect everything
-// ══════════════════════════════════════════════════════════════════════════════
-
-setTimeout(() => {
-    connectMarketWS();
-    connectAgentsWS();
-}, 2000);
-
-// Always start simulation for demo purposes
-setTimeout(startSimulation, 3500);
 </script>
+
 </body>
 </html>

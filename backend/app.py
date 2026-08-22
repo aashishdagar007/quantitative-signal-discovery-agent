@@ -14,6 +14,7 @@ import numpy as np
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException, WebSocket, WebSocketDisconnect, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from pydantic import BaseModel
@@ -558,9 +559,14 @@ async def health():
     return {"status": "ok", "timestamp": datetime.utcnow().isoformat()}
 
 
-@app.get("/", tags=["System"])
+@app.get("/dashboard", tags=["System"], response_class=HTMLResponse)
+@app.get("/", tags=["System"], response_class=HTMLResponse)
 async def root():
-    return {"message": "AI Trading System API — visit /docs for interactive API documentation"}
+    frontend_index = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend", "index.html")
+    if os.path.exists(frontend_index):
+        with open(frontend_index, "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+    return HTMLResponse(content="<h1>AI Trading System — Visit /docs for API documentation</h1>")
 
 
 # ── WebSocket: Live market data stream ────────────────────────────────────────

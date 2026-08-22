@@ -63,6 +63,10 @@ class TestHealthEndpoint:
         resp = client.get("/")
         assert resp.status_code == 200
 
+    def test_dashboard_returns_200(self) -> None:
+        resp = client.get("/dashboard")
+        assert resp.status_code == 200
+
 
 class TestAuthToken:
     def test_valid_credentials_issue_token(self) -> None:

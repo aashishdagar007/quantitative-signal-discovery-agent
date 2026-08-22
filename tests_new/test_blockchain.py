@@ -9,15 +9,12 @@ Coverage for blockchain_audit/merkle.py and blockchain_audit/ledger.py:
 from __future__ import annotations
 
 import json
-import os
 import sqlite3
-import tempfile
 
 import pytest
 
-from blockchain_audit.merkle import MerkleTree, MerkleProof
-from blockchain_audit.ledger import ImmutableLedger, Block
-
+from blockchain_audit.ledger import ImmutableLedger
+from blockchain_audit.merkle import MerkleProof, MerkleTree
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  Merkle Tree unit tests

@@ -1,5 +1,4 @@
 """AI Desk Celery tasks — runs LangGraph multi-agent pipeline asynchronously."""
-import os
 from backend.celery_app import celery_app
 
 

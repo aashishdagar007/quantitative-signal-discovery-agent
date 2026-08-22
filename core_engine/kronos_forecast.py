@@ -6,7 +6,6 @@ Outputs a Mixture of Gaussians probability distribution over future prices.
 
 from __future__ import annotations
 
-import asyncio
 import json
 import os
 from pathlib import Path

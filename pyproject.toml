@@ -84,3 +84,5 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 # Tests can use module-level fixtures and re-import freely.
 "tests/*" = ["F401"]
+"tests_new/*" = ["F401"]
+"backend/*" = ["E402"]

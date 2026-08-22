@@ -24,8 +24,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-from blockchain_audit.merkle import MerkleTree, MerkleProof
-
+from blockchain_audit.merkle import MerkleProof, MerkleTree
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  Block data class

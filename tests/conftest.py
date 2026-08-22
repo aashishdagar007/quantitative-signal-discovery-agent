@@ -1,5 +1,5 @@
-import sys
 import os
+import sys
 
 # Add the src directory to the path so the package can be imported
 src_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'src')

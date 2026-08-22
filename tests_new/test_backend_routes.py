@@ -14,7 +14,6 @@ Tests:
 from __future__ import annotations
 
 import os
-import pytest
 
 # Use SQLite for all tests — override DATABASE_URL before any backend import
 os.environ.setdefault("DATABASE_URL", "sqlite:///./test_trading.db")
@@ -26,8 +25,7 @@ from sqlalchemy.pool import StaticPool
 
 # ── Import app AFTER env override ────────────────────────────────────────────
 from backend.app import app
-from backend.database import Base, get_db, hash_password, User
-
+from backend.database import Base, User, get_db, hash_password
 
 # ── Test-specific SQLite engine (in-memory) ───────────────────────────────────
 

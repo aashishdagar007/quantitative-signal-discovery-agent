@@ -23,7 +23,6 @@ from core_engine.portfolio_allocation import (
     RiskMetrics,
 )
 
-
 # ── Fixtures ──────────────────────────────────────────────────────────────────
 
 @pytest.fixture()

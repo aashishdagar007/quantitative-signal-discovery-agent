@@ -4,6 +4,7 @@ Redis broker, four queues: ai_desk, kronos, portfolio, default
 """
 
 import os
+
 from celery import Celery
 from dotenv import load_dotenv
 

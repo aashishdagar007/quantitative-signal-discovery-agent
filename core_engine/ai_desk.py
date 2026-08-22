@@ -7,7 +7,6 @@ Each agent produces a signed directional consensus using ED25519 cryptography.
 from __future__ import annotations
 
 import asyncio
-import json
 import os
 import re
 from datetime import datetime
@@ -36,8 +35,8 @@ for _p in ["infrastructure/.env", ".env", "../infrastructure/.env"]:
 
 # ── LangChain imports ─────────────────────────────────────────────────────────
 try:
+    from langchain_core.messages import SystemMessage
     from langchain_openai import ChatOpenAI
-    from langchain_core.messages import HumanMessage, SystemMessage
     LANGCHAIN_AVAILABLE = True
 except ImportError:
     LANGCHAIN_AVAILABLE = False
@@ -170,7 +169,7 @@ def _llm_or_heuristic(llm, prompt: str, fallback_fn) -> str:
     try:
         resp = llm.invoke([SystemMessage(content=prompt)])
         return resp.content
-    except Exception as e:
+    except Exception:
         return fallback_fn()
 
 
@@ -299,7 +298,7 @@ Provide: (1) directional bias [LONG/SHORT/NEUTRAL], (2) confidence 0-100%, (3) k
 
         def _fallback():
             if len(prices) < 2:
-                return f"NEUTRAL. Confidence: 50%."
+                return "NEUTRAL. Confidence: 50%."
             direction = "LONG" if current > sma20 and rsi < 70 else "SHORT" if current < sma20 and rsi > 30 else "NEUTRAL"
             conf = 60.0 if rsi < 30 or rsi > 70 else 52.0
             return f"Technical: {direction}. RSI={rsi:.1f}, Price vs SMA={current - sma20:.5f}. Confidence: {conf}%."
@@ -550,7 +549,6 @@ async def run_ai_desk(
 
 
 if __name__ == "__main__":
-    import pprint
 
     print("=" * 70)
     print("  AI Trading Desk — LangGraph Multi-Agent Pipeline")

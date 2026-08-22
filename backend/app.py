@@ -358,7 +358,6 @@ async def get_audit_log(
     db: Session = Depends(get_db),
     _: User = Depends(get_current_active_user),
 ):
-    import json as _json
     offset = (page - 1) * limit
     entries = (
         db.query(AuditLog)
@@ -410,7 +409,8 @@ async def ws_market(websocket: WebSocket):
     """Streams live simulated/real market tick data to connected clients."""
     await manager.connect("market", websocket)
     try:
-        import random, math
+        import math
+        import random
         tick = 0
         while True:
             await asyncio.sleep(1.0)

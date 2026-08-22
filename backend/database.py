@@ -5,7 +5,7 @@ SQLAlchemy ORM with PostgreSQL backend, loaded from environment.
 
 import os
 from datetime import datetime
-from typing import Optional, Generator
+from typing import Generator, Optional
 
 from dotenv import load_dotenv
 
@@ -15,14 +15,10 @@ for env_path in [".env", "infrastructure/.env", "../infrastructure/.env"]:
         load_dotenv(env_path)
         break
 
-from sqlalchemy import (
-    Boolean, Column, DateTime, Float, ForeignKey, Integer,
-    Numeric, String, Text, create_engine, text
-)
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from passlib.context import CryptContext
+from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, Numeric, String, Text, create_engine
 from sqlalchemy.orm import DeclarativeBase, Session, relationship, sessionmaker
 from sqlalchemy.pool import StaticPool
-from passlib.context import CryptContext
 
 # ── Database connection ────────────────────────────────────────────────────────
 

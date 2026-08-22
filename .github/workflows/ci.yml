@@ -4,8 +4,11 @@
 # PR-level continuous integration for the Quantitative Signal Discovery Agent.
 #
 # Runs on every pull request targeting main, plus on direct pushes to main:
-#   1. lint  - fast ruff check (style, unused imports)
-#   2. test  - install the package and run pytest
+#   1. lint         - fast ruff check (style, unused imports) on src/ tests/
+#   2. test         - install the package and run the original pytest suite
+#   3. lint-new     - ruff check on backend/, core_engine/, blockchain_audit/
+#   4. test-new     - run the full test suite (tests/ + tests_new/)
+#   5. cpp-build    - cmake build of the C++ security profiler
 
 name: CI
 
@@ -21,8 +24,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # ── Original NeMo Agent Toolkit lint ────────────────────────────────────────
   lint:
-    name: Lint (ruff)
+    name: Lint — src/tests (ruff)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -35,11 +39,12 @@ jobs:
       - name: Install ruff
         run: python -m pip install --upgrade pip ruff
 
-      - name: Run ruff check
+      - name: Run ruff check (original codebase)
         run: ruff check src tests
 
+  # ── Original NeMo Agent Toolkit tests ───────────────────────────────────────
   test:
-    name: Test (pytest, Python 3.12)
+    name: Test — original suite (pytest, Python 3.12)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -55,5 +60,77 @@ jobs:
       - name: Create venv and install locked dependencies
         run: uv sync --locked --extra test
 
-      - name: Run pytest
+      - name: Run original pytest suite
         run: uv run --locked pytest tests/ -v --tb=short
+
+  # ── New modules lint ─────────────────────────────────────────────────────────
+  lint-new:
+    name: Lint — backend/core_engine/blockchain_audit (ruff)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install ruff
+        run: python -m pip install --upgrade pip ruff
+
+      - name: Run ruff check (new modules)
+        run: ruff check backend/ core_engine/ blockchain_audit/
+
+  # ── New modules full test suite ──────────────────────────────────────────────
+  test-new:
+    name: Test — full suite including tests_new/ (pytest, Python 3.12)
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: "sqlite:///./ci_trading.db"
+      SECRET_KEY: "ci-test-secret-key-not-for-production"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Set up Python 3.12
+        run: uv python install 3.12
+
+      - name: Create venv and install locked dependencies
+        run: uv sync --locked --extra test
+
+      - name: Run full pytest suite (tests/ + tests_new/)
+        run: uv run --locked pytest tests/ tests_new/ -v --tb=short
+
+  # ── C++ security profiler build ──────────────────────────────────────────────
+  cpp-build:
+    name: Build — C++ security profiler (cmake)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install cmake and build tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y cmake build-essential
+
+      - name: Configure cmake
+        working-directory: security
+        run: |
+          mkdir -p build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build security profiler
+        working-directory: security/build
+        run: cmake --build . --config Release --parallel $(nproc)
+
+      - name: Verify shared library was produced
+        working-directory: security/build
+        run: |
+          ls -la
+          test -f libsecurity_profiler.so || test -f security_profiler.dll || \
+            (echo "ERROR: shared library not found"; exit 1)

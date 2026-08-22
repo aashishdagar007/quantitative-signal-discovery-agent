@@ -10,13 +10,11 @@ Rules enforced:
 from __future__ import annotations
 
 import os
-import tempfile
 import textwrap
 
 import pytest
 
 from core_engine.pine_script import PineScriptParser, PineScriptService
-
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 

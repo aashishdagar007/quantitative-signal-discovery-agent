@@ -7,12 +7,10 @@ is not valid Python and ast.parse() cannot process it).
 
 from __future__ import annotations
 
-import ast as _py_ast
 import math
 import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  Pine Script v5 Regex Transpiler
@@ -460,8 +458,8 @@ class PineStdLib:
     @staticmethod
     def stoch(close, high, low, k_period=14, d_period=3):
         h = PineStdLib.highest(high, k_period)
-        l = PineStdLib.lowest(low, k_period)
-        k = (close[-1] - l) / (h - l) * 100 if h != l else 50.0
+        low_val = PineStdLib.lowest(low, k_period)
+        k = (close[-1] - low_val) / (h - low_val) * 100 if h != low_val else 50.0
         return k, k  # simplified
 
     # ── Strategy signals ──────────────────────────────────────────────────────

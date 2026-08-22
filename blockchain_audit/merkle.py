@@ -6,7 +6,6 @@ SHA-256 based binary Merkle tree for tamper-proof audit proofs.
 from __future__ import annotations
 
 import hashlib
-import json
 from dataclasses import dataclass
 from typing import List, Optional, Tuple
 
@@ -45,7 +44,7 @@ class MerkleProof:
     def to_dict(self) -> dict:
         return {
             "leaf_hash": self.leaf_hash,
-            "proof":     [(s, l) for s, l in self.proof],
+            "proof":     [(s, is_left) for s, is_left in self.proof],
             "root":      self.root,
             "valid":     self.verify(),
         }

@@ -144,3 +144,20 @@ class TestProtectedRoutes:
         token = _get_token()
         resp = client.get("/admin/dashboard", headers=_auth_headers(token))
         assert resp.status_code == 200
+
+    def test_unauthenticated_portfolio_positions_returns_401(self) -> None:
+        resp = client.get("/portfolio/positions")
+        assert resp.status_code == 401
+
+    def test_authenticated_portfolio_positions_returns_200(self) -> None:
+        token = _get_token()
+        resp = client.get("/portfolio/positions", headers=_auth_headers(token))
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "positions" in data
+        assert "risk_metrics" in data
+        assert len(data["positions"]) > 0
+        for pos in data["positions"]:
+            assert "symbol" in pos
+            assert "weight" in pos
+            assert "asset_class" in pos

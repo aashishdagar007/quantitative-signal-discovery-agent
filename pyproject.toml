@@ -86,3 +86,4 @@ ignore = [
 "tests/*" = ["F401"]
 "tests_new/*" = ["F401"]
 "backend/*" = ["E402"]
+"core_engine/*" = ["E402"]

@@ -33,6 +33,8 @@ for _p in ["infrastructure/.env", ".env", "../infrastructure/.env"]:
         load_dotenv(_p)
         break
 
+from core_engine.kronos_forecast import KronosProbabilisticModel
+
 # ── LangChain imports ─────────────────────────────────────────────────────────
 try:
     from langchain_core.messages import SystemMessage
@@ -116,14 +118,15 @@ class KeyManager:
 # ══════════════════════════════════════════════════════════════════════════════
 
 class AgentState(TypedDict):
-    messages:    List[Dict[str, Any]]
-    market_data: Dict[str, Any]
-    consensus:   Optional[str]
-    signature:   Optional[str]
-    risk_score:  float
-    direction:   Optional[str]   # "long" | "short" | "neutral"
-    confidence:  float
+    messages:          List[Dict[str, Any]]
+    market_data:       Dict[str, Any]
+    consensus:         Optional[str]
+    signature:         Optional[str]
+    risk_score:        float
+    direction:         Optional[str]   # "long" | "short" | "neutral"
+    confidence:        float
     position_size_pct: float
+    kronos_forecast:   Optional[Dict[str, Any]]
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -176,6 +179,61 @@ def _llm_or_heuristic(llm, prompt: str, fallback_fn) -> str:
 # ══════════════════════════════════════════════════════════════════════════════
 #  Specialized Agents
 # ══════════════════════════════════════════════════════════════════════════════
+
+class ForecastAgent:
+    """Probabilistic price forecasting agent powered by Kronos transformer model."""
+
+    def __init__(self, key_manager: KeyManager) -> None:
+        self.model = KronosProbabilisticModel()
+        self.key_manager = key_manager
+
+    def forecast(self, state: AgentState) -> AgentState:
+        prices = state["market_data"].get("prices", [])
+        symbol = state["market_data"].get("symbol", "EUR/USD")
+        market_type = "<FOREX>" if any(curr in symbol for curr in ["EUR", "USD", "GBP", "JPY"]) else "<CRYPTO>"
+
+        if len(prices) >= 2:
+            fc = self.model.forecast(prices, market_type=market_type)
+        else:
+            current = prices[0] if prices else 1.0
+            fc = {
+                "predicted_price": current,
+                "median_price": current,
+                "confidence_intervals": {
+                    "p10_p90": {"lower": current * 0.98, "upper": current * 1.02},
+                    "p25_p75": {"lower": current * 0.99, "upper": current * 1.01},
+                },
+                "market_type": "fallback",
+            }
+
+        current_price = prices[-1] if prices else 1.0
+        pred_price = float(fc.get("predicted_price", current_price))
+        change_pct = (pred_price - current_price) / max(current_price, 1e-6) * 100.0
+
+        direction = "long" if change_pct > 0.05 else "short" if change_pct < -0.05 else "neutral"
+        confidence = min(50.0 + min(abs(change_pct) * 20.0, 40.0), 90.0)
+
+        msg_content = (
+            f"Kronos Probabilistic Forecast ({symbol}): "
+            f"Current={current_price:.5f} -> Predicted={pred_price:.5f} ({change_pct:+.2f}%). "
+            f"Directional bias: {direction.upper()} (confidence {confidence:.1f}%)."
+        )
+
+        return {
+            **state,
+            "kronos_forecast": fc,
+            "messages": state["messages"] + [
+                {
+                    "agent": "kronos_forecast",
+                    "role": "assessment",
+                    "content": msg_content,
+                    "direction": direction,
+                    "confidence": confidence,
+                    "forecast": fc,
+                }
+            ],
+        }
+
 
 class FundamentalsAgent:
     """Macroeconomic and on-chain fundamentals analyst."""
@@ -368,9 +426,15 @@ Make the strongest SHORT case. Challenge bull arguments. End with: direction=SHO
         consensus_strength = abs(long_votes - short_votes) / max(len(votes), 1)
         final_confidence = min(avg_conf * (0.8 + 0.4 * consensus_strength), 95.0)
 
+        fc = state.get("kronos_forecast")
+        fc_line = ""
+        if fc and "predicted_price" in fc:
+            fc_line = f"\nKronos Forecast: Predicted={fc['predicted_price']:.5f} ({fc.get('market_type', 'probabilistic')})\n"
+
         consensus_text = (
             f"DEBATE CONSENSUS: {final_direction.upper()}\n"
-            f"Confidence: {final_confidence:.1f}%\n\n"
+            f"Confidence: {final_confidence:.1f}%\n"
+            f"{fc_line}\n"
             f"Bull argument:\n{bull_text}\n\n"
             f"Bear argument:\n{bear_text}"
         )
@@ -460,6 +524,7 @@ class RiskManagerAgent:
 def create_ai_desk():
     """Build and compile the LangGraph multi-agent workflow."""
     key_manager  = KeyManager()
+    forecast     = ForecastAgent(key_manager)
     fundamentals = FundamentalsAgent(key_manager)
     sentiment    = SentimentAgent(key_manager)
     technical    = TechnicalAgent(key_manager)
@@ -470,6 +535,7 @@ def create_ai_desk():
         # Return a simple sequential runner when LangGraph isn't installed
         class FallbackPipeline:
             def invoke(self, state: AgentState) -> AgentState:
+                state = forecast.forecast(state)
                 state = fundamentals.analyze(state)
                 state = sentiment.analyze(state)
                 state = technical.analyze(state)
@@ -481,13 +547,15 @@ def create_ai_desk():
     workflow = StateGraph(AgentState)
 
     # Wrap synchronous agent methods for LangGraph nodes
+    workflow.add_node("forecast",      forecast.forecast)
     workflow.add_node("fundamentals",  fundamentals.analyze)
     workflow.add_node("sentiment",     sentiment.analyze)
     workflow.add_node("technical",     technical.analyze)
     workflow.add_node("debaters",      debaters.deliberate)
     workflow.add_node("risk_manager",  risk_manager.assess)
 
-    workflow.set_entry_point("fundamentals")
+    workflow.set_entry_point("forecast")
+    workflow.add_edge("forecast",     "fundamentals")
     workflow.add_edge("fundamentals", "sentiment")
     workflow.add_edge("sentiment",    "technical")
     workflow.add_edge("technical",    "debaters")
@@ -523,6 +591,7 @@ async def run_ai_desk(
         "direction":         None,
         "confidence":        0.0,
         "position_size_pct": 0.0,
+        "kronos_forecast":   None,
     }
 
     # LangGraph compile() returns a synchronous runnable
@@ -534,17 +603,22 @@ async def run_ai_desk(
     if result.get("consensus") and result.get("signature"):
         valid_signature = key_manager.verify_consensus(result["consensus"], result["signature"])
 
+    fc = result.get("kronos_forecast")
+    predicted_price = fc.get("predicted_price") if fc else None
+
     return {
-        "direction":          result.get("direction"),
-        "confidence":         result.get("confidence"),
-        "risk_score":         result.get("risk_score"),
-        "position_size_pct":  result.get("position_size_pct"),
-        "consensus":          result.get("consensus"),
-        "signature":          result.get("signature"),
-        "signature_valid":    valid_signature,
-        "public_key_pem":     key_manager.public_key_pem(),
-        "messages":           result.get("messages", []),
-        "timestamp":          datetime.utcnow().isoformat(),
+        "direction":                 result.get("direction"),
+        "confidence":                result.get("confidence"),
+        "risk_score":                result.get("risk_score"),
+        "position_size_pct":         result.get("position_size_pct"),
+        "consensus":                 result.get("consensus"),
+        "signature":                 result.get("signature"),
+        "signature_valid":           valid_signature,
+        "public_key_pem":            key_manager.public_key_pem(),
+        "kronos_forecast":           fc,
+        "forecast_predicted_price":  predicted_price,
+        "messages":                  result.get("messages", []),
+        "timestamp":                 datetime.utcnow().isoformat(),
     }
 
 

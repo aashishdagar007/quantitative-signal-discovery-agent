@@ -191,6 +191,11 @@ class HierarchicalRiskParity(BaseEstimator, TransformerMixin):
         Fit HRP on return matrix of shape (n_observations, n_assets).
         """
         n = returns.shape[1] if returns.ndim == 2 else 1
+        # If asset_symbols not provided and returns is a pandas DataFrame,
+        # use the DataFrame's column names as symbols (preserves real symbols
+        # instead of falling back to asset_0, asset_1, ...).
+        if asset_symbols is None and hasattr(returns, "columns"):
+            asset_symbols = list(returns.columns)
         self._symbols = asset_symbols or [f"asset_{i}" for i in range(n)]
 
         self._cov  = _estimate_covariance(returns)

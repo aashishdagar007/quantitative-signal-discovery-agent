@@ -15,3 +15,7 @@ keys/*.pem
 
 # Local documentation (not for upstream)
 docs/
+
+# Local log files (Windows build artifacts)
+pip_install.log
+pytest_output.txt

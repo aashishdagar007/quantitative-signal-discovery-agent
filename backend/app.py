@@ -18,8 +18,8 @@ from jose import JWTError, jwt
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-# Load environment
-for env_path in ["infrastructure/.env", ".env", "../infrastructure/.env"]:
+# Load environment — project-root .env wins over infrastructure/.env (Docker config)
+for env_path in [".env", "infrastructure/.env", "../infrastructure/.env"]:
     if os.path.exists(env_path):
         load_dotenv(env_path)
         break

@@ -8,19 +8,21 @@ from datetime import datetime
 from typing import Optional, Generator
 
 from dotenv import load_dotenv
+
+# Load environment variables FIRST so DATABASE_URL is resolved from .env
+for env_path in [".env", "infrastructure/.env", "../infrastructure/.env"]:
+    if os.path.exists(env_path):
+        load_dotenv(env_path)
+        break
+
 from sqlalchemy import (
     Boolean, Column, DateTime, Float, ForeignKey, Integer,
     Numeric, String, Text, create_engine, text
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import DeclarativeBase, Session, relationship, sessionmaker
+from sqlalchemy.pool import StaticPool
 from passlib.context import CryptContext
-
-# Load environment variables from infrastructure/.env or project root .env
-for env_path in ["infrastructure/.env", ".env", "../infrastructure/.env"]:
-    if os.path.exists(env_path):
-        load_dotenv(env_path)
-        break
 
 # ── Database connection ────────────────────────────────────────────────────────
 
@@ -29,13 +31,26 @@ DATABASE_URL: str = os.environ.get(
     "postgresql://trading_user:trading_pass@localhost:5432/trading_db"
 )
 
-engine = create_engine(
-    DATABASE_URL,
-    echo=False,
-    pool_pre_ping=True,
-    pool_size=10,
-    max_overflow=20,
-)
+_is_sqlite = DATABASE_URL.startswith("sqlite")
+
+if _is_sqlite:
+    # SQLite: use StaticPool (single connection) — safe for dev/testing
+    engine = create_engine(
+        DATABASE_URL,
+        echo=False,
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+else:
+    # PostgreSQL / other RDBMS: production pool settings
+    engine = create_engine(
+        DATABASE_URL,
+        echo=False,
+        pool_pre_ping=True,
+        pool_size=10,
+        max_overflow=20,
+    )
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # ── ORM Base ───────────────────────────────────────────────────────────────────

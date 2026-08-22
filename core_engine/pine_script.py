@@ -114,9 +114,55 @@ class PineScriptParser:
         self._indent_stack: List[int] = [0]
         self._var_types: Dict[str, str] = {}
 
+    def _join_continuations(self, lines: List[str]) -> List[str]:
+        """
+        Join physical lines that sit inside an unclosed ( [ { across lines
+        (e.g. a multi-line strategy(...) / indicator(...) header), so each
+        logical Pine statement becomes exactly one entry in the result.
+        Skips characters inside string literals and after an unquoted //
+        comment marker when counting bracket depth.
+        """
+        joined: List[str] = []
+        buffer = ""
+        depth = 0
+        for raw_line in lines:
+            in_string: Optional[str] = None
+            idx = 0
+            n = len(raw_line)
+            while idx < n:
+                ch = raw_line[idx]
+                if in_string:
+                    if ch == "\\" and idx + 1 < n:
+                        idx += 2
+                        continue
+                    if ch == in_string:
+                        in_string = None
+                    idx += 1
+                    continue
+                if ch in ("\"", "'"):
+                    in_string = ch
+                    idx += 1
+                    continue
+                if ch == "/" and idx + 1 < n and raw_line[idx + 1] == "/":
+                    break
+                if ch in "([{":
+                    depth += 1
+                elif ch in ")]}":
+                    depth -= 1
+                idx += 1
+            buffer = raw_line if not buffer else buffer + " " + raw_line.strip()
+            if depth <= 0:
+                joined.append(buffer)
+                buffer = ""
+                depth = 0
+        if buffer:
+            joined.append(buffer)
+        return joined
+
     def transpile(self, pine_code: str) -> str:
         """Main entry: transpile full Pine Script source to Python."""
         lines = pine_code.splitlines()
+        lines = self._join_continuations(lines)
         python_lines: List[str] = [
             "# Auto-transpiled from Pine Script v5",
             "import math",
@@ -238,6 +284,17 @@ class PineScriptParser:
 
         # Strip Pine type annotations
         expr = re.sub(self.TYPE_KEYWORDS, "", expr)
+
+        # Single call wrapping the whole expression, e.g. bgcolor(COND ? A : B).
+        # Unwrap it first so a ternary living inside the call's argument is
+        # transformed against the argument alone, not against "name(argument"
+        # with the call's own opening paren swallowed into the condition.
+        # Reassigns expr (rather than returning early) so the outer name
+        # still passes through the FUNC_MAP renaming below.
+        m_call = re.match(r"^([\w.]+)\((.*)\)$", expr)
+        if m_call and m_call.group(2).count("(") == m_call.group(2).count(")"):
+            fn_name, inner = m_call.group(1), m_call.group(2)
+            expr = f"{fn_name}({self._transform_expr(inner)})"
 
         # Ternary: condition ? true_val : false_val → (true_val if condition else false_val)
         m = re.match(r"^(.+?)\s*\?\s*(.+?)\s*:\s*(.+)$", expr)

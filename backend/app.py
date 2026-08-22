@@ -31,10 +31,14 @@ from backend.database import (
     authenticate_user,
     create_db_and_tables,
     get_db,
+    get_trading_mode,
     get_user_by_username,
     hash_password,
     seed_team_members,
+    set_trading_mode,
 )
+from blockchain_audit.ledger import ImmutableLedger
+from security.python_security_profiler import profiler as security_profiler
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
@@ -221,6 +225,10 @@ class SignalResponse(BaseModel):
         from_attributes = True
 
 
+class ModeToggleRequest(BaseModel):
+    mode: str  # "PAPER" or "LIVE"
+
+
 # ── Auth routes ───────────────────────────────────────────────────────────────
 
 @app.post("/auth/token", response_model=Token, tags=["Auth"])
@@ -301,11 +309,89 @@ async def stop_engine(_: User = Depends(require_role("admin"))):
 
 
 @app.get("/engine/status", tags=["Engine"])
-async def engine_status(current_user: User = Depends(get_current_active_user)):
+async def engine_status(
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_active_user),
+):
     return {
         "running": _engine_running,
+        "mode": get_trading_mode(db),
         "markets": list(_market_state.keys()),
         "timestamp": datetime.utcnow().isoformat(),
+    }
+
+
+@app.get("/engine/mode", tags=["Engine"])
+async def get_engine_mode(
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_active_user),
+):
+    """Get the current engine trading mode (PAPER | LIVE)."""
+    return {"mode": get_trading_mode(db)}
+
+
+@app.post("/engine/mode", tags=["Engine"])
+async def set_engine_mode(
+    req: ModeToggleRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("admin")),
+):
+    """Toggle the engine trading mode (admin only). Logs state change to immutable blockchain ledger."""
+    new_mode = req.mode.upper()
+    if new_mode not in ("PAPER", "LIVE"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Mode must be either 'PAPER' or 'LIVE'",
+        )
+
+    current_mode = get_trading_mode(db)
+    if new_mode == current_mode:
+        return {"mode": current_mode, "previous_mode": current_mode, "changed": False}
+
+    # Persist in DB
+    set_trading_mode(db, new_mode, set_by=current_user.username)
+
+    # Log to immutable blockchain ledger
+    tx_id = ""
+    try:
+        ledger = ImmutableLedger()
+        block = ledger.log_state_change({
+            "component": "trading_mode",
+            "from": current_mode,
+            "to": new_mode,
+            "reason": f"Toggled by admin {current_user.username}",
+        })
+        tx_id = block.tx_id
+
+        # Mirror into AuditLog SQL table
+        db.add(AuditLog(
+            tx_id=block.tx_id,
+            block_index=block.index,
+            event_type="state_change",
+            payload=json.dumps(block.payload),
+            block_hash=block.block_hash,
+            merkle_root=block.merkle_root,
+            created_at=datetime.utcnow(),
+        ))
+        db.commit()
+    except Exception as exc:
+        print(f"[Engine Mode] Ledger logging error: {exc}")
+
+    await manager.broadcast("system", {
+        "event": "trading_mode_change",
+        "from": current_mode,
+        "to": new_mode,
+        "set_by": current_user.username,
+        "tx_id": tx_id,
+        "timestamp": datetime.utcnow().isoformat(),
+    })
+
+    return {
+        "mode": new_mode,
+        "previous_mode": current_mode,
+        "set_by": current_user.username,
+        "tx_id": tx_id,
+        "changed": True,
     }
 
 
@@ -387,6 +473,24 @@ async def admin_dashboard(current_user: User = Depends(require_role("admin"))):
         "user": current_user.username,
         "role": current_user.role,
         "system": "AI Trading System v1.0",
+    }
+
+
+# ── Security diagnostics ──────────────────────────────────────────────────────
+
+@app.get("/security/status", tags=["Security"])
+async def get_security_status(_: User = Depends(get_current_active_user)):
+    """Return runtime security profiler diagnostics, state, and recent anomalies."""
+    try:
+        summary = json.loads(security_profiler.summary_json())
+    except Exception:
+        summary = {"state": security_profiler.get_current_state().name}
+    return {
+        "status": security_profiler.get_current_state().name,
+        "summary": summary,
+        "anomalies": security_profiler.get_anomalies()[-20:],
+        "using_cpp": security_profiler.using_cpp,
+        "timestamp": datetime.utcnow().isoformat(),
     }
 
 

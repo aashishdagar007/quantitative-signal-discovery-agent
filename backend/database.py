@@ -159,11 +159,39 @@ class AuditLog(Base):
     created_at  = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
 
 
+class TradingState(Base):
+    """Trading mode state (PAPER vs LIVE)"""
+    __tablename__ = "trading_state"
+
+    id     = Column(Integer, primary_key=True, index=True)
+    mode   = Column(String(8), nullable=False, default="PAPER")   # PAPER | LIVE
+    set_by = Column(String(64), nullable=True)
+    set_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+
 # ── DB lifecycle helpers ──────────────────────────────────────────────────────
 
 def create_db_and_tables() -> None:
     """Create all tables if they don't exist yet."""
     Base.metadata.create_all(bind=engine)
+
+
+def get_trading_mode(db: Session) -> str:
+    """Return current trading mode (defaults to PAPER)."""
+    state = db.query(TradingState).order_by(TradingState.id.desc()).first()
+    return state.mode if state else "PAPER"
+
+
+def set_trading_mode(db: Session, mode: str, set_by: str = "system") -> TradingState:
+    """Set trading mode (PAPER or LIVE) and persist to database."""
+    mode_upper = mode.upper()
+    if mode_upper not in ("PAPER", "LIVE"):
+        raise ValueError(f"Invalid trading mode '{mode}'. Must be 'PAPER' or 'LIVE'.")
+    state = TradingState(mode=mode_upper, set_by=set_by, set_at=datetime.utcnow())
+    db.add(state)
+    db.commit()
+    db.refresh(state)
+    return state
 
 
 def get_db() -> Generator[Session, None, None]:

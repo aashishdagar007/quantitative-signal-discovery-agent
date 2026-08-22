@@ -23,6 +23,8 @@ from typing import Any, Callable, Dict, List, Optional
 import aiohttp
 from dotenv import load_dotenv
 
+from security.python_security_profiler import profiler as _security_profiler
+
 # Load environment
 for _p in ["infrastructure/.env", ".env", "../infrastructure/.env"]:
     if os.path.exists(_p):
@@ -35,6 +37,15 @@ BINANCE_WS_URL   = os.environ.get("BINANCE_WS_URL",   "wss://fstream.binance.com
 BINANCE_REST_URL = os.environ.get("BINANCE_REST_URL",  "https://fapi.binance.com")
 BINANCE_API_KEY  = os.environ.get("BINANCE_API_KEY",   "")
 BINANCE_SECRET   = os.environ.get("BINANCE_API_SECRET","")
+
+MAX_ORDER_NOTIONAL   = float(os.environ.get("MAX_ORDER_NOTIONAL", "10000.0"))
+MAX_DAILY_LOSS       = float(os.environ.get("MAX_DAILY_LOSS", "5000.0"))
+DEFAULT_TRADING_MODE = os.environ.get("TRADING_MODE", "PAPER").upper()
+
+
+class RiskLimitExceeded(Exception):
+    """Raised when an order breaches risk controls (max notional or max daily loss)."""
+    pass
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -359,6 +370,11 @@ class DualMarketEngine:
         self._order_log: List[Dict] = []
         self._running = False
         self._on_data_callbacks: List[Callable] = []
+        self.mode: str = DEFAULT_TRADING_MODE
+        self.max_order_notional: float = MAX_ORDER_NOTIONAL
+        self.max_daily_loss: float = MAX_DAILY_LOSS
+        self.daily_loss: float = 0.0
+        self.profiler = _security_profiler
 
     def initialize(
         self,
@@ -423,36 +439,110 @@ class DualMarketEngine:
             else:
                 cb({"market": "forex", "symbol": symbol, "data": tick})
 
+    def _estimate_price(self, symbol: str, override_price: Optional[float] = None) -> float:
+        """Estimate current asset price from buffers or reference defaults."""
+        if override_price is not None and override_price > 0:
+            return float(override_price)
+        prices = self.get_prices(symbol)
+        if prices:
+            return float(prices[-1])
+        defaults = {"BTCUSDT": 65000.0, "ETHUSDT": 3500.0, "EURUSD": 1.0845, "GBPUSD": 1.2650}
+        return defaults.get(symbol, 100.0)
+
     async def execute_order(
         self,
         symbol: str,
         side: str,
         quantity: float,
         order_type: str = "market",
+        price: Optional[float] = None,
+        mode: Optional[str] = None,
     ) -> Dict[str, Any]:
-        """Route and execute an order on the appropriate market."""
+        """
+        Route and execute an order.
+        In PAPER mode: orders simulate execution without sending to live venue.
+        In LIVE mode: risk guards (max notional cap, daily loss limit) are enforced,
+        and orders are submitted to Binance / MT5 with HFT timing & profiler observation.
+        """
+        active_mode = (mode or self.mode).upper()
         order_id = f"ord_{int(time.time()*1000)}_{symbol}"
+        est_price = self._estimate_price(symbol, price)
+
+        # ── PAPER MODE ──────────────────────────────────────────────────────────
+        if active_mode == "PAPER":
+            with self.profiler.hft_timer(f"paper_order_{symbol}"):
+                self.profiler.monitor_execution(
+                    order_id=order_id,
+                    executed_price=est_price,
+                    expected_price=est_price,
+                    deviation_pct=0.0,
+                )
+            order = {
+                "id":        order_id,
+                "symbol":    symbol,
+                "side":      side,
+                "quantity":  quantity,
+                "price":     est_price,
+                "type":      order_type,
+                "status":    "PAPER",
+                "exchange":  "paper_sim",
+                "mode":      "PAPER",
+                "timestamp": datetime.utcnow().isoformat(),
+            }
+            self._order_log.append(order)
+            logger.info("[Engine] [PAPER] Order %s: %s %s %.4f @ %.4f", order_id, side, symbol, quantity, est_price)
+            return order
+
+        # ── LIVE MODE: Risk Guards ─────────────────────────────────────────────
+        notional = quantity * est_price
+        if notional > self.max_order_notional:
+            raise RiskLimitExceeded(
+                f"Order notional ${notional:.2f} exceeds maximum allowed cap of ${self.max_order_notional:.2f}"
+            )
+
+        if self.daily_loss >= self.max_daily_loss:
+            raise RiskLimitExceeded(
+                f"Daily loss ${self.daily_loss:.2f} reached circuit breaker limit of ${self.max_daily_loss:.2f}"
+            )
+
+        # ── LIVE MODE: Order Execution with Security Profiling ─────────────────
         order: Dict[str, Any] = {
             "id":        order_id,
             "symbol":    symbol,
             "side":      side,
             "quantity":  quantity,
             "type":      order_type,
+            "mode":      "LIVE",
             "status":    "pending",
             "timestamp": datetime.utcnow().isoformat(),
         }
 
-        # Determine routing
         crypto_symbols = {"BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT", "XRPUSDT"}
-        if symbol in crypto_symbols:
-            result = await self.binance.place_order(symbol, side, quantity, order_type.upper())
-            order.update({"exchange": "binance", "status": result.get("status", "UNKNOWN"), **result})
-        else:
-            result = self.forex.place_order(symbol, side, quantity)
-            order.update({"exchange": "mt5", "status": "filled" if result.get("retcode") == 0 else "error", **result})
+        with self.profiler.hft_timer(f"live_order_{symbol}"):
+            if symbol in crypto_symbols:
+                if self.binance is None:
+                    result = {"status": "error", "message": "Binance adapter not initialized"}
+                else:
+                    result = await self.binance.place_order(symbol, side, quantity, order_type.upper(), price=price)
+                order.update({"exchange": "binance", "status": result.get("status", "UNKNOWN"), **result})
+            else:
+                if self.forex is None:
+                    result = {"retcode": -1, "status": "error", "message": "Forex MT5 bridge not initialized"}
+                else:
+                    result = self.forex.place_order(symbol, side, quantity, price=price or 0.0)
+                order.update({"exchange": "mt5", "status": "filled" if result.get("retcode") == 0 else "error", **result})
+
+        exec_price = float(order.get("price") or est_price)
+        dev_pct = abs(exec_price - est_price) / max(est_price, 1e-6) * 100.0
+        self.profiler.monitor_execution(
+            order_id=order_id,
+            executed_price=exec_price,
+            expected_price=est_price,
+            deviation_pct=dev_pct,
+        )
 
         self._order_log.append(order)
-        logger.info("[Engine] Order %s: %s %s %.4f → %s", order_id, side, symbol, quantity, order.get("status"))
+        logger.info("[Engine] [LIVE] Order %s: %s %s %.4f → %s", order_id, side, symbol, quantity, order.get("status"))
         return order
 
     def get_prices(self, symbol: str) -> List[float]:

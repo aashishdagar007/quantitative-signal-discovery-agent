@@ -25,47 +25,6 @@ from sqlalchemy.pool import StaticPool
 
 # ── Import app AFTER env override ────────────────────────────────────────────
 from backend.app import app
-from backend.database import Base, User, get_db, hash_password
-
-# ── Test-specific SQLite engine (in-memory) ───────────────────────────────────
-
-TEST_DB_URL = "sqlite://"  # pure in-memory
-
-_test_engine = create_engine(
-    TEST_DB_URL,
-    connect_args={"check_same_thread": False},
-    poolclass=StaticPool,
-)
-_TestSession = sessionmaker(autocommit=False, autoflush=False, bind=_test_engine)
-
-
-def _override_get_db():
-    db = _TestSession()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
-# Seed one user for auth tests
-def _seed_test_db():
-    Base.metadata.create_all(bind=_test_engine)
-    db = _TestSession()
-    if not db.query(User).filter(User.username == "testadmin").first():
-        db.add(User(
-            username="testadmin",
-            email="testadmin@test.local",
-            hashed_password=hash_password("TestPass#2026!"),
-            role="admin",
-            is_active=True,
-        ))
-        db.commit()
-    db.close()
-
-
-# Apply the dependency override BEFORE creating the TestClient
-app.dependency_overrides[get_db] = _override_get_db
-_seed_test_db()
 
 client = TestClient(app, raise_server_exceptions=True)
 
